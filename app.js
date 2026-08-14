@@ -9,19 +9,19 @@ const CONFIG = {
   practiceEnd: 20,
   practiceDays: ["Mon", "Tue", "Thu"],
   practiceSeasonEnd: "2026-11-12",
-  cacheKey: "riverton-football-hub-v5"
+  cacheKey: "riverton-football-hub-v2-0"
 };
 
 const VENUES = {
-  riverton: { name: "Riverton Football Field", address: "7120 SE 70th St, Riverton, KS 66770", lat: 37.0718, lon: -94.7046 },
-  chelsea: { name: "Chelsea High School Stadium", address: "801 W 6th St, Chelsea, OK 74016", lat: 36.5356, lon: -95.4325 },
-  westville: { name: "Yellowjacket Stadium", address: "Buffington Rd & Industrial Rd, Westville, OK 74965", lat: 35.9926, lon: -94.5680 },
-  wyandotte: { name: "Bear Stadium", address: "5 S 1st St, Wyandotte, OK 74370", lat: 36.7942, lon: -94.7252 },
-  fairland: { name: "Fairland Stadium", address: "202 W Washington Ave, Fairland, OK 74343", lat: 36.7512, lon: -94.8483 },
-  quapaw: { name: "Quapaw Football Stadium", address: "305 W 1st St, Quapaw, OK 74363", lat: 36.9540, lon: -94.7890 },
-  commerce: { name: "Commerce Stadium", address: "420 D St, Commerce, OK 74339", lat: 36.9340, lon: -94.8727 },
-  baxter: { name: "Baxter Springs Football Field", address: "100 N Military Ave, Baxter Springs, KS 66713", lat: 37.0236, lon: -94.7355 },
-  galena: { name: "Galena Football Field", address: "702 E 7th St, Galena, KS 66739", lat: 37.0759, lon: -94.6397 }
+  riverton: { name: "Riverton Football Field", address: "7120 SE 70th St, Riverton, KS 66770", lat: 37.0718, lon: -94.7046, destinationType: "Official high-school campus", sourceLabel: "Riverton USD 404", sourceUrl: "https://www.usd404.org/60163_2" },
+  chelsea: { name: "Chelsea Football Field", address: "801 W 6th St, Chelsea, OK 74016", lat: 36.5356, lon: -95.4325, destinationType: "Published football-field listing", sourceLabel: "MapQuest field listing", sourceUrl: "https://www.mapquest.com/us/oklahoma/chelsea-high-school-449523714" },
+  westville: { name: "Akin-Langley Field", address: "2080 US Hwy 62, Westville, OK 74965", lat: 35.9926, lon: -94.5680, destinationType: "Official district destination; confirm field gate", sourceLabel: "Westville Public Schools", sourceUrl: "https://www.westville.k12.ok.us/page/football" },
+  wyandotte: { name: "Wyandotte Football Field", address: "5 S 1st St, Wyandotte, OK 74370", lat: 36.7942, lon: -94.7252, destinationType: "Official school campus", sourceLabel: "Wyandotte Public Schools", sourceUrl: "https://www.wyandotte.k12.ok.us/" },
+  fairland: { name: "Fairland Football Field", address: "202 W Washington Ave, Fairland, OK 74343", lat: 36.7512, lon: -94.8483, destinationType: "Official school campus", sourceLabel: "Fairland Public Schools", sourceUrl: "https://www.fpsowls.com/" },
+  quapaw: { name: "Quapaw Football Field", address: "305 W 1st St, Quapaw, OK 74363", lat: 36.9540, lon: -94.7890, destinationType: "Official school campus", sourceLabel: "Quapaw Public Schools", sourceUrl: "https://www.qpswildcats.com/apps/contact/" },
+  commerce: { name: "Commerce High School Stadium", address: "420 Doug Furnas Blvd, Commerce, OK 74339", lat: 36.9340, lon: -94.8727, destinationType: "Official high-school campus", sourceLabel: "Commerce High School", sourceUrl: "https://www.commercetigers.net/o/chs" },
+  baxter: { name: "Baxter Springs Football Field", address: "100 N Military Ave, Baxter Springs, KS 66713", lat: 37.0236, lon: -94.7355, destinationType: "Federal school-directory address", sourceLabel: "NCES school directory", sourceUrl: "https://nces.ed.gov/ccd/schoolsearch/school_detail.asp?ID=200381001508" },
+  galena: { name: "Galena High School", address: "702 E 7th St, Galena, KS 66739", lat: 37.0759, lon: -94.6397, destinationType: "Official district campus", sourceLabel: "Galena USD 499", sourceUrl: "https://usd499.socs.net/vnews/display.v/ContactUs" }
 };
 
 const GAMES = [
@@ -37,7 +37,7 @@ const GAMES = [
   { id: "wk10", week: "Week 10", date: "2026-11-14", time: null, opponent: "Super Bowl", side: "tbd", venue: "commerce", postseason: true }
 ];
 
-const state = { report: null, loading: false, selectedHour: null, activeView: "home", nextGame: null, lunchGrade: "3", lunchData: null };
+const state = { report: null, reportFromCache: false, alerts: [], alertsAvailable: null, loading: false, selectedHour: null, activeView: "home", nextGame: null, lunchGrade: "3", lunchData: null, lunchFromCache: false };
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(value) {
@@ -65,6 +65,17 @@ function targetDate(parts, hour) { return dateAt(localDateKey(parts), `${String(
 function gameStart(game) { return dateAt(game.date, game.time || "12:00"); }
 function gameEnd(game) { return game.time ? new Date(gameStart(game).getTime() + 2 * 60 * 60 * 1000) : dateAt(game.date, "23:59"); }
 function gameVenue(game) { return game.venue ? VENUES[game.venue] : null; }
+
+function chicagoWeekday(date = new Date()) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "short" }).format(date);
+}
+
+function isPracticeDay(date = new Date()) { return CONFIG.practiceDays.includes(chicagoWeekday(date)); }
+
+function calendarDayNumber(date = new Date()) {
+  const parts = chicagoParts(date);
+  return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)) / 86400000;
+}
 
 function formatGameDate(game) {
   const date = dateAt(game.date, "12:00");
@@ -101,11 +112,11 @@ function nextTeamEvent(now = new Date()) {
 function relativeEventText(event, now = new Date()) {
   if (!event) return "Season complete";
   if (event.start <= now && event.end > now) return event.type === "practice" ? "Practice is underway" : "Game day";
-  const diff = event.start.getTime() - now.getTime(), days = Math.floor(diff / 86400000);
   const eventKey = localDateKey(chicagoParts(event.start)), todayKey = localDateKey(chicagoParts(now));
   if (eventKey === todayKey) return "Today";
-  if (days < 1) return "Tomorrow";
-  return `${days + 1} days away`;
+  const days = calendarDayNumber(event.start) - calendarDayNumber(now);
+  if (days === 1) return "Tomorrow";
+  return `${days} days away`;
 }
 
 function renderNextEvent() {
@@ -126,6 +137,17 @@ function renderNextEvent() {
     $("nextEventMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
   }
   $("nextEventCountdown").textContent = relativeEventText(event);
+}
+
+function renderDayContext() {
+  const practiceToday = isPracticeDay();
+  $("homeConditionsKicker").textContent = practiceToday ? "Today’s practice conditions" : "Today’s conditions";
+  $("homeConditionsTitle").textContent = practiceToday ? "Practice window · 6–8 PM" : "No team practice today · 4–8 PM";
+  $("conditionsTitle").textContent = practiceToday ? "Practice conditions" : "Today’s conditions";
+  $("conditionsIntro").textContent = practiceToday
+    ? "Tap an hour to view its exact KSHSAA guidance."
+    : "No team practice is scheduled today. The hourly forecast remains available for planning; tap any hour to review its KSHSAA range.";
+  $("shareButton").textContent = practiceToday ? "Share practice card" : "Share conditions card";
 }
 
 function durationMs(value) {
@@ -150,14 +172,16 @@ function valueAt(series, target) {
 
 function tierFor(wbgt) {
   if (wbgt === null) return { short: "WAITING", decision: "Forecast unavailable", detail: "No NWS WBGT grid value is available for this hour yet.", color: "#8297ad", className: "waiting", range: "Waiting for NWS data", zone: "", rules: [] };
-  if (wbgt >= 89.8) return { short: "CANCEL", decision: "No outdoor activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE", rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."] };
-  if (wbgt >= 87.8) return { short: "DELAY", decision: "Delay or reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE", rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."] };
-  if (wbgt >= 84.7) return { short: "MODIFY", decision: "Modify equipment and practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE", rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."] };
-  if (wbgt >= 80) return { short: "CAUTION", decision: "Increase water and rest breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE", rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."] };
+  const value = Math.round((Number(wbgt) + Number.EPSILON) * 10) / 10;
+  if (value >= 89.8) return { short: "CANCEL", decision: "No outdoor activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE", rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."] };
+  if (value >= 87.8) return { short: "DELAY", decision: "Delay or reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE", rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."] };
+  if (value >= 84.7) return { short: "MODIFY", decision: "Modify equipment and practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE", rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."] };
+  if (value >= 80) return { short: "CAUTION", decision: "Increase water and rest breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE", rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."] };
   return { short: "NORMAL", decision: "Normal practice precautions", detail: "Continue scheduled hydration and rest breaks.", color: "#4acb8a", className: "normal", range: "79.9°F or lower", zone: "GREEN ZONE", rules: ["Normal activities are permitted.", "Provide at least three separate rest breaks each hour, at least 3 minutes each.", "All participants must have unrestricted access to water.", "Continue monitoring athletes for heat-illness symptoms."] };
 }
 
 function formatTemp(value) { return value === null ? "—" : `${Math.round(value)}°`; }
+function formatWbgt(value) { return value === null ? "—" : `${(Math.round((Number(value) + Number.EPSILON) * 10) / 10).toFixed(1)}°`; }
 
 async function fetchJson(url, timeout = 12000) {
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout);
@@ -173,7 +197,7 @@ async function fetchLocalJson(url, timeout = 12000) {
   try {
     const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
     if (!response.ok) throw new Error(`Menu data returned ${response.status}`);
-    return await response.json();
+    return { data: await response.json(), fromCache: response.headers.get("X-Riverton-Cache") === "saved" };
   } finally { clearTimeout(timer); }
 }
 
@@ -205,10 +229,14 @@ function renderLunchMenu() {
 
 async function loadLunchMenus() {
   try {
-    state.lunchData = await fetchLocalJson("./lunch-menu.json", 9000);
+    const result = await fetchLocalJson("./lunch-menu.json", 9000);
+    state.lunchData = result.data;
+    state.lunchFromCache = result.fromCache;
   } catch {
     state.lunchData = null;
+    state.lunchFromCache = false;
   }
+  $("lunchCacheWarning").hidden = !state.lunchFromCache;
   renderLunchMenu();
 }
 
@@ -229,10 +257,10 @@ function renderRows(hours) {
   $("hourRows").innerHTML = hours.map((hour, index) => {
     const tier = tierFor(hour.wbgt), hourValue = hour.hour ?? CONFIG.hours[index], slotEnd = hourValue + 1;
     const endLabel = slotEnd > 12 ? `${slotEnd - 12} PM` : `${slotEnd} AM`, slotLabel = hourValue === CONFIG.practiceEnd ? `${hour.label} conditions` : `${hour.label}–${endLabel}`;
-    const selected = state.selectedHour === hourValue, practiceClass = hourValue >= CONFIG.practiceStart && hourValue < CONFIG.practiceEnd ? " practice-hour" : "";
+    const selected = state.selectedHour === hourValue, practiceClass = isPracticeDay() && hourValue >= CONFIG.practiceStart && hourValue < CONFIG.practiceEnd ? " practice-hour" : "";
     return `<div class="hour-item${practiceClass}">
       <button class="hour-row" type="button" data-hour="${hourValue}" aria-expanded="${selected}" aria-controls="guidance-${hourValue}">
-        <strong>${hour.label}</strong><span>${formatTemp(hour.temperature)}</span><span>${formatTemp(hour.heatIndex)}</span><b class="row-${tier.className}">${formatTemp(hour.wbgt)}</b><em class="row-${tier.className}">${tier.short}</em>
+        <strong>${hour.label}</strong><span>${formatTemp(hour.temperature)}</span><span>${formatTemp(hour.heatIndex)}</span><b class="row-${tier.className}">${formatWbgt(hour.wbgt)}</b><em class="row-${tier.className}">${tier.short}</em>
       </button>
       <div id="guidance-${hourValue}" class="hour-guidance" ${selected ? "" : "hidden"}>
         <div class="hour-guidance-head"><h3>${slotLabel}: ${tier.decision}</h3><span class="hour-guidance-zone" style="color:${tier.color}">${tier.zone}<br>${tier.range}</span></div>
@@ -245,43 +273,101 @@ function renderRows(hours) {
 }
 
 function renderHomeConditions(report) {
-  const hours = report?.hours?.filter((hour) => hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd) || [];
-  if (!hours.some((hour) => hour.wbgt !== null)) { $("homeConditions").innerHTML = '<p class="empty-state">Practice-hour WBGT values are not available yet. Open Conditions for the latest status.</p>'; return; }
+  const hours = report?.hours?.filter((hour) => !isPracticeDay() || (hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd)) || [];
+  if (!hours.some((hour) => hour.wbgt !== null)) { $("homeConditions").innerHTML = `<p class="empty-state">${isPracticeDay() ? "Practice-hour" : "Hourly"} WBGT values are not available yet. Open Conditions for the latest status.</p>`; return; }
   $("homeConditions").innerHTML = hours.map((hour) => {
     const tier = tierFor(hour.wbgt);
-    return `<button class="mini-condition" type="button" data-hour-jump="${hour.hour}"><strong>${hour.label}</strong><b style="color:${tier.color}">${formatTemp(hour.wbgt)}</b><span style="color:${tier.color}">${tier.short} · View rules</span></button>`;
+    return `<button class="mini-condition" type="button" data-hour-jump="${hour.hour}"><strong>${hour.label}</strong><b style="color:${tier.color}">${formatWbgt(hour.wbgt)}</b><span style="color:${tier.color}">${tier.short} · View rules</span></button>`;
   }).join("");
 }
 
-function renderAlerts(alerts) {
-  const heatAlerts = (alerts || []).filter((feature) => /heat/i.test(feature.properties?.event || "")).slice(0, 1);
-  $("alertArea").innerHTML = heatAlerts.map((feature) => `<div class="alert-card"><span class="alert-icon">!</span><div><strong>${escapeHtml(feature.properties.event)}</strong><p>${escapeHtml(feature.properties.headline || "A National Weather Service heat alert is in effect.")}</p></div></div>`).join("");
+function formatSourceTime(value) {
+  if (!value) return "Unavailable";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Unavailable";
+  return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
+}
+
+function relativeAge(value) {
+  if (!value) return "age unavailable";
+  const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
+  if (!Number.isFinite(elapsed)) return "age unavailable";
+  const minutes = Math.floor(elapsed / 60000);
+  if (minutes < 1) return "less than 1 minute ago";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60), remaining = minutes % 60;
+  if (hours < 24) return `${hours}h${remaining ? ` ${remaining}m` : ""} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+function updateFreshnessUI() {
+  const report = state.report;
+  const retrievedAt = report?.retrievedAt || report?.updatedAt || null;
+  const issuedAt = report?.issuedAt || null;
+  $("freshnessBadge").textContent = state.reportFromCache ? "SAVED" : report ? "LIVE" : "CHECKING";
+  $("freshnessBadge").classList.toggle("cached", state.reportFromCache);
+  $("forecastIssued").textContent = issuedAt ? `NWS issued ${formatSourceTime(issuedAt)} · ${relativeAge(issuedAt)}` : "NWS issuance time unavailable";
+  $("forecastRetrieved").textContent = retrievedAt ? `Retrieved ${formatSourceTime(retrievedAt)} · ${relativeAge(retrievedAt)}` : "Retrieval time unavailable";
+  $("homeFreshness").textContent = report ? `${state.reportFromCache ? "SAVED" : "NWS"} · ${issuedAt ? `Issued ${relativeAge(issuedAt)}` : "Issuance time unavailable"} · ${retrievedAt ? `Retrieved ${relativeAge(retrievedAt)}` : "Retrieval time unavailable"}` : "Checking NWS issuance time…";
+  const showWarning = state.reportFromCache && (state.activeView === "home" || state.activeView === "conditions");
+  $("freshnessWarning").hidden = !showWarning;
+  if (showWarning) $("freshnessWarningText").textContent = `The NWS request failed. This forecast was retrieved ${relativeAge(retrievedAt)}. Do not use saved data for a practice decision—refresh or use the on-field meter.`;
+}
+
+function renderAlerts(alerts = state.alerts) {
+  state.alerts = alerts || [];
+  const visible = state.activeView === "home" || state.activeView === "conditions";
+  $("alertArea").hidden = !visible;
+  if (!visible) return;
+  if (state.alertsAvailable === false) {
+    $("alertArea").innerHTML = `<article class="alert-card alert-unavailable"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg></span><div><strong>NWS alert status unavailable</strong><p>The alert feed did not respond. <a href="${CONFIG.alertsUrl}" target="_blank" rel="noopener">Check the official NWS alert page</a> before activity.</p></div></article>`;
+    return;
+  }
+  const heatAlerts = state.alerts.filter((feature) => /heat/i.test(feature.properties?.event || ""));
+  $("alertArea").innerHTML = heatAlerts.map((feature) => {
+    const properties = feature.properties || {};
+    const issued = properties.sent || properties.effective;
+    const timing = `${issued ? `Issued ${formatSourceTime(issued)}` : "Issue time unavailable"}${properties.expires ? ` · Expires ${formatSourceTime(properties.expires)}` : ""}`;
+    return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS heat alert")}</strong><p>${escapeHtml(properties.headline || "A National Weather Service heat alert is in effect.")}</p><small>${escapeHtml(timing)}</small></div></article>`;
+  }).join("");
 }
 
 function renderReport(report, fromCache = false) {
   state.report = report;
+  state.reportFromCache = fromCache;
   const validHours = report.hours.filter((hour) => hour.wbgt !== null);
-  $("dateLabel").textContent = `${report.dateLabel} · Practice 6–8 PM · Ages 8U`;
-  $("shareButton").disabled = validHours.length === 0;
+  $("dateLabel").textContent = `${report.dateLabel} · ${isPracticeDay() ? "Practice 6–8 PM" : "No scheduled practice"} · Ages 8U`;
+  renderDayContext();
+  $("shareButton").disabled = validHours.length === 0 || fromCache;
+  $("shareButton").title = fromCache ? "Refresh live NWS data before sharing" : "";
+  if (fromCache) $("shareButton").textContent = "Refresh before sharing";
   renderRows(report.hours);
   renderHomeConditions(report);
-  $("updatedLine").textContent = `${fromCache ? "Saved forecast" : `Updated ${new Date(report.updatedAt).toLocaleTimeString("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" })}`} · Forecast only · Not a field measurement`;
+  updateFreshnessUI();
+  $("updatedLine").textContent = `${fromCache ? "Saved forecast" : "Live NWS forecast"} · Retrieved ${relativeAge(report.retrievedAt || report.updatedAt)} · Not a field measurement`;
 }
 
 async function loadPracticeForecast() {
   const parts = chicagoParts(), dateKey = localDateKey(parts), cached = readCache(dateKey);
+  state.alertsAvailable = null;
+  renderAlerts([]);
   try {
     const [gridResult, alertsResult] = await Promise.allSettled([fetchJson(CONFIG.gridUrl), fetchJson(CONFIG.alertsUrl, 8000)]);
+    state.alertsAvailable = alertsResult.status === "fulfilled";
+    renderAlerts(alertsResult.status === "fulfilled" ? alertsResult.value.features : []);
     if (gridResult.status !== "fulfilled") throw gridResult.reason;
-    const report = { dateKey, dateLabel: localDateLabel(), updatedAt: new Date().toISOString(), hours: buildHours(gridResult.value.properties, parts) };
+    const properties = gridResult.value.properties || {};
+    const retrievedAt = new Date().toISOString();
+    const report = { dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: properties.updateTime || properties.updated || null, updatedAt: retrievedAt, hours: buildHours(properties, parts) };
     if (report.hours.some((hour) => hour.wbgt !== null)) saveCache(report);
     renderReport(report);
-    if (alertsResult.status === "fulfilled") renderAlerts(alertsResult.value.features);
   } catch (error) {
     if (cached) { renderReport(cached, true); $("notice").textContent = "Showing the last saved practice forecast because the NWS feed did not respond."; }
     else {
       const empty = CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null }));
-      renderReport({ dateKey, dateLabel: localDateLabel(), updatedAt: new Date().toISOString(), hours: empty });
+      const retrievedAt = new Date().toISOString();
+      renderReport({ dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: null, updatedAt: retrievedAt, hours: empty });
       $("notice").textContent = error?.name === "AbortError" ? "The NWS request timed out. Tap refresh to try again." : "The NWS feed did not respond. Tap refresh to try again.";
     }
   }
@@ -325,17 +411,26 @@ async function loadGameWeather(game) {
     const period = hourly.properties.periods.find((item) => start >= new Date(item.startTime) && start < new Date(item.endTime)) || hourly.properties.periods.find((item) => Math.abs(new Date(item.startTime).getTime() - start.getTime()) < 3600000);
     if (!period) throw new Error("No game-hour forecast");
     const wbgt = valueAt(grid.properties.wetBulbGlobeTemperature, start), rain = period.probabilityOfPrecipitation?.value;
+    const issuedAt = grid.properties.updateTime || hourly.properties.updateTime || hourly.properties.generatedAt || null;
+    const retrievedAt = new Date().toISOString();
     $("gameWeather").innerHTML = `<div class="weather-grid">
       <div><small>Temperature</small><strong>${period.temperature}°</strong></div>
       <div><small>Rain</small><strong>${rain ?? 0}%</strong></div>
-      <div><small>${wbgt === null ? "Wind" : "WBGT"}</small><strong>${wbgt === null ? escapeHtml(period.windSpeed) : formatTemp(wbgt)}</strong></div>
-    </div><p class="weather-summary">${escapeHtml(period.shortForecast)} · Wind ${escapeHtml(period.windSpeed)} ${escapeHtml(period.windDirection)}</p>`;
+      <div><small>${wbgt === null ? "Wind" : "WBGT"}</small><strong>${wbgt === null ? escapeHtml(period.windSpeed) : formatWbgt(wbgt)}</strong></div>
+    </div><p class="weather-summary">${escapeHtml(period.shortForecast)} · Wind ${escapeHtml(period.windSpeed)} ${escapeHtml(period.windDirection)}</p><p class="weather-freshness">${issuedAt ? `NWS issued ${escapeHtml(formatSourceTime(issuedAt))} · ` : ""}Retrieved ${escapeHtml(formatSourceTime(retrievedAt))}</p>`;
   } catch {
     $("gameWeather").innerHTML = '<p class="empty-state">The NWS game-day forecast is temporarily unavailable. Tap refresh to try again.</p>';
   }
 }
 
 function mapsUrl(venue) { return `https://maps.apple.com/?daddr=${encodeURIComponent(`${venue.name}, ${venue.address}`)}`; }
+
+function renderVenueVerificationList() {
+  $("venueVerificationList").innerHTML = Object.values(VENUES).map((venue) => `<article class="venue-verification">
+    <div><strong>${escapeHtml(venue.name)}</strong><p>${escapeHtml(venue.address)}</p><small>${escapeHtml(venue.destinationType)} · Verified Aug. 14, 2026</small></div>
+    <div class="venue-links"><a href="${escapeHtml(venue.sourceUrl)}" target="_blank" rel="noopener">Source</a><a href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a></div>
+  </article>`).join("");
+}
 
 function renderSchedule() {
   $("scheduleRows").innerHTML = GAMES.map((game) => {
@@ -370,6 +465,8 @@ function switchView(view) {
   state.activeView = view;
   document.querySelectorAll(".app-view").forEach((section) => { const active = section.id === `view-${view}`; section.hidden = !active; section.classList.toggle("active", active); });
   document.querySelectorAll(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  renderAlerts();
+  updateFreshnessUI();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -391,11 +488,12 @@ async function shareReport() {
   ctx.fillStyle = "#061522"; ctx.fillRect(0, 0, 1080, 1500);
   ctx.fillStyle = "#003d7a"; ctx.fillRect(0, 0, 1080, 170);
   ctx.fillStyle = "#d7cf69"; ctx.font = "900 39px Arial"; ctx.fillText("RIVERTON RAMS", 60, 72);
-  ctx.fillStyle = "#ffffff"; ctx.font = "900 51px Arial"; ctx.fillText("PRACTICE CONDITIONS", 60, 133);
+  const practiceToday = isPracticeDay();
+  ctx.fillStyle = "#ffffff"; ctx.font = "900 51px Arial"; ctx.fillText(practiceToday ? "PRACTICE CONDITIONS" : "TODAY’S CONDITIONS", 60, 133);
   ctx.fillStyle = "#d7cf69"; ctx.fillRect(0, 170, 18, 190);
   ctx.fillStyle = "#122b43"; ctx.fillRect(18, 170, 1062, 190);
-  ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText("PRACTICE WINDOW", 64, 226);
-  ctx.fillStyle = "#ffffff"; ctx.font = "900 58px Arial"; ctx.fillText("6–8 PM", 64, 300);
+  ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText(practiceToday ? "PRACTICE WINDOW" : "HOURLY OUTLOOK", 64, 226);
+  ctx.fillStyle = "#ffffff"; ctx.font = "900 58px Arial"; ctx.fillText(practiceToday ? "6–8 PM" : "4–8 PM", 64, 300);
   ctx.fillStyle = "#d7cf69"; ctx.font = "700 24px Arial"; ctx.fillText("Hourly KSHSAA guidance", 300, 298);
   const xs = [62, 270, 465, 680, 850];
   ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "GUIDANCE"].forEach((label, index) => ctx.fillText(label, xs[index], 425));
@@ -403,11 +501,11 @@ async function shareReport() {
     const y = 503 + index * 108, rowTier = tierFor(hour.wbgt);
     ctx.strokeStyle = "#223c55"; ctx.beginPath(); ctx.moveTo(58, y + 34); ctx.lineTo(1022, y + 34); ctx.stroke();
     ctx.fillStyle = "#ffffff"; ctx.font = "800 32px Arial"; ctx.fillText(hour.label, xs[0], y); ctx.font = "600 32px Arial"; ctx.fillText(formatTemp(hour.temperature), xs[1], y); ctx.fillText(formatTemp(hour.heatIndex), xs[2], y);
-    ctx.fillStyle = rowTier.color; ctx.font = "900 36px Arial"; ctx.fillText(formatTemp(hour.wbgt), xs[3], y); ctx.font = "900 24px Arial"; ctx.fillText(rowTier.short, xs[4], y);
+    ctx.fillStyle = rowTier.color; ctx.font = "900 36px Arial"; ctx.fillText(formatWbgt(hour.wbgt), xs[3], y); ctx.font = "900 24px Arial"; ctx.fillText(rowTier.short, xs[4], y);
   });
   const practiceHours = state.report.hours.filter((hour) => hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd);
   ctx.fillStyle = "#112a41"; ctx.fillRect(48, 1055, 984, 350);
-  ctx.fillStyle = "#d7cf69"; ctx.font = "900 25px Arial"; ctx.fillText("6–8 PM KSHSAA GUIDANCE", 76, 1100);
+  ctx.fillStyle = "#d7cf69"; ctx.font = "900 25px Arial"; ctx.fillText(`${practiceToday ? "6–8 PM" : "HOURLY"} KSHSAA GUIDANCE`, 76, 1100);
   practiceHours.forEach((hour, index) => {
     const rowTier = tierFor(hour.wbgt), y = 1160 + index * 104;
     ctx.fillStyle = rowTier.color; ctx.font = "900 26px Arial"; ctx.fillText(`${hour.label} · ${rowTier.short}`, 76, y);
@@ -416,7 +514,7 @@ async function shareReport() {
   ctx.fillStyle = "#8195a9"; ctx.font = "500 17px Arial"; ctx.fillText("Field WBGT reading 30–60 minutes before practice overrides this forecast.", 60, 1460);
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) return;
-  const file = new File([blob], "riverton-rams-practice-conditions.png", { type: "image/png" });
+  const file = new File([blob], "riverton-rams-conditions.png", { type: "image/png" });
   try {
     if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "Riverton Rams Practice Conditions", files: [file] });
     else { const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = file.name; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); $("notice").textContent = "Practice card downloaded."; }
@@ -457,10 +555,14 @@ $("hourRows").addEventListener("click", (event) => {
 });
 
 renderSchedule();
+renderVenueVerificationList();
 renderNextEvent();
+renderDayContext();
 renderNextGame(nextGame());
 renderRows(CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
 renderLunchMenu();
 refreshHub();
+
+setInterval(updateFreshnessUI, 60000);
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));

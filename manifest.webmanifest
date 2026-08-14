@@ -1,7 +1,7 @@
 {
   "name": "Riverton Football Hub",
   "short_name": "Football Hub",
-  "description": "Riverton Pee Wee schedule, game-day weather, practice WBGT guidance and weekly 3rd and 4th grade lunch menus.",
+  "description": "Safety-oriented Riverton Pee Wee schedule, NWS weather, WBGT guidance and weekly lunch menus.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
