@@ -5,10 +5,12 @@ const CONFIG = {
   alertsUrl: "https://api.weather.gov/alerts/active?point=37.071827,-94.704617",
   timeZone: "America/Chicago",
   hours: [16, 17, 18, 19, 20],
-  cacheKey: "riverton-wbgt-v2"
+  practiceStart: 18,
+  practiceEnd: 20,
+  cacheKey: "riverton-wbgt-v3"
 };
 
-const state = { report: null, loading: false };
+const state = { report: null, loading: false, selectedHour: null };
 const $ = (id) => document.getElementById(id);
 
 function chicagoParts(date = new Date()) {
@@ -96,6 +98,7 @@ function buildHours(properties, parts) {
     const target = targetDate(parts, hour);
     const heatIndex = valueAt(properties.heatIndex, target);
     return {
+      hour,
       label: `${hour - 12} PM`,
       temperature: valueAt(properties.temperature, target),
       heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target),
@@ -114,9 +117,23 @@ function saveCache(report) {
 }
 
 function renderRows(hours) {
-  $("hourRows").innerHTML = hours.map((hour) => {
-    const tier = tierFor(hour.wbgt);
-    return `<div class="hour-row"><strong>${hour.label}</strong><span>${formatTemp(hour.temperature)}</span><span>${formatTemp(hour.heatIndex)}</span><b class="row-${tier.className}">${formatTemp(hour.wbgt)}</b><em class="row-${tier.className}">${tier.short}</em></div>`;
+  $("hourRows").innerHTML = hours.map((hour, index) => {
+    const tier = tierFor(hour.wbgt), hourValue = hour.hour ?? CONFIG.hours[index];
+    const slotEnd = hourValue + 1, endLabel = slotEnd === 12 ? "12 PM" : slotEnd > 12 ? `${slotEnd - 12} PM` : `${slotEnd} AM`;
+    const slotLabel = hourValue === CONFIG.practiceEnd ? `${hour.label} conditions` : `${hour.label}–${endLabel}`;
+    const selected = state.selectedHour === hourValue;
+    const practiceClass = hourValue >= CONFIG.practiceStart && hourValue < CONFIG.practiceEnd ? " practice-hour" : "";
+    return `<div class="hour-item${practiceClass}">
+      <button class="hour-row" type="button" data-hour="${hourValue}" aria-expanded="${selected}" aria-controls="guidance-${hourValue}">
+        <strong>${hour.label}</strong><span>${formatTemp(hour.temperature)}</span><span>${formatTemp(hour.heatIndex)}</span><b class="row-${tier.className}">${formatTemp(hour.wbgt)}</b><em class="row-${tier.className}">${tier.short}</em>
+      </button>
+      <div id="guidance-${hourValue}" class="hour-guidance" ${selected ? "" : "hidden"}>
+        <div class="hour-guidance-head"><h3>${slotLabel}: ${tier.decision}</h3><span class="hour-guidance-zone" style="color:${tier.color}">${tier.zone}<br>${tier.range}</span></div>
+        <p class="hour-guidance-detail">${tier.detail}</p>
+        ${tier.rules.length ? `<ul>${tier.rules.map((rule) => `<li>${rule}</li>`).join("")}</ul>` : ""}
+        <p class="rule-source"><a href="https://www.kshsaa.org/Public/pdf/HeatInfoCurrent.pdf" target="_blank" rel="noopener">View the official KSHSAA policy</a> · Updated April 2026</p>
+      </div>
+    </div>`;
   }).join("");
 }
 
@@ -128,30 +145,8 @@ function renderAlerts(alerts) {
 function renderReport(report, fromCache = false) {
   state.report = report;
   const validHours = report.hours.filter((hour) => hour.wbgt !== null);
-  const governing = validHours.reduce((current, hour) => !current || hour.wbgt > current.wbgt ? hour : current, null);
-  const tier = tierFor(governing?.wbgt ?? null);
-  const card = $("decisionCard"); card.className = `decision-card ${tier.className}`;
-  $("decisionTitle").textContent = tier.decision;
-  $("decisionDetail").textContent = tier.detail;
-  $("dateLabel").textContent = `${report.dateLabel} · Ages 8U`;
-  if (governing) {
-    $("zoneBlock").className = "zone-block";
-    $("zoneBlock").innerHTML = `<span>Governing KSHSAA range</span><strong style="color:${tier.color}">${tier.zone} · ${tier.range}</strong>`;
-    $("ruleRange").textContent = `${tier.zone} · ${tier.range}`;
-    $("ruleTitle").textContent = tier.decision;
-    $("ruleList").innerHTML = tier.rules.map((rule) => `<li>${rule}</li>`).join("");
-    $("shareButton").disabled = false;
-  } else {
-    const ended = chicagoParts().hour >= 21;
-    $("decisionTitle").textContent = ended ? "Today’s window has ended" : "NWS data temporarily unavailable";
-    $("decisionDetail").textContent = ended ? "The NWS grid no longer includes the completed 4–8 PM hours. Check again tomorrow before practice." : "Tap refresh in a moment. The page will never stay stuck loading.";
-    $("zoneBlock").className = "zone-block skeleton-line";
-    $("zoneBlock").textContent = ended ? "No current 4–8 PM grid values" : "Tap Refresh forecast to retry";
-    $("ruleRange").textContent = "No applicable range available";
-    $("ruleTitle").textContent = "Practice modifications";
-    $("ruleList").innerHTML = "";
-    $("shareButton").disabled = true;
-  }
+  $("dateLabel").textContent = `${report.dateLabel} · Practice 6–8 PM · Ages 8U`;
+  $("shareButton").disabled = validHours.length === 0;
   renderRows(report.hours);
   $("updatedLine").textContent = `${fromCache ? "Saved forecast" : `Updated ${new Date(report.updatedAt).toLocaleTimeString("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" })}`} · Forecast only · Not a field measurement`;
 }
@@ -161,11 +156,7 @@ function renderLoading() {
   $("refreshTop").classList.add("loading");
   $("refreshButton").textContent = "Refreshing…";
   $("refreshButton").disabled = true;
-  $("decisionCard").className = "decision-card waiting";
-  $("decisionTitle").textContent = "Checking the NWS forecast";
-  $("decisionDetail").textContent = "Pulling the latest forecast grid for the Riverton athletic field.";
-  $("zoneBlock").className = "zone-block skeleton-line";
-  $("zoneBlock").textContent = "Loading NWS WBGT grid…";
+  $("notice").textContent = "Checking the NWS forecast grid…";
 }
 
 function renderDone() {
@@ -189,7 +180,7 @@ async function loadForecast() {
   } catch (error) {
     if (cached) { renderReport(cached, true); $("notice").textContent = "Showing the last saved forecast because the NWS feed did not respond."; }
     else {
-      const empty = CONFIG.hours.map((hour) => ({ label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null }));
+      const empty = CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null }));
       renderReport({ dateKey, dateLabel: localDateLabel(), updatedAt: new Date().toISOString(), hours: empty });
       $("notice").textContent = error?.name === "AbortError" ? "The NWS request timed out. Tap refresh to try again." : "The NWS feed did not respond. Tap refresh to try again.";
     }
@@ -214,33 +205,35 @@ function fittedFont(ctx, text, weight, startSize, minSize, maxWidth) {
 async function shareReport() {
   if (!state.report) return;
   const validHours = state.report.hours.filter((hour) => hour.wbgt !== null);
-  const governing = validHours.reduce((current, hour) => !current || hour.wbgt > current.wbgt ? hour : current, null);
-  if (!governing) return;
-  const tier = tierFor(governing.wbgt), canvas = document.createElement("canvas"), scale = 2;
+  if (!validHours.length) return;
+  const canvas = document.createElement("canvas"), scale = 2;
   canvas.width = 1080 * scale; canvas.height = 1500 * scale;
   const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
   ctx.fillStyle = "#061522"; ctx.fillRect(0, 0, 1080, 1500);
   ctx.fillStyle = "#003d7a"; ctx.fillRect(0, 0, 1080, 170);
   ctx.fillStyle = "#cac46b"; ctx.font = "900 39px Arial"; ctx.fillText("RIVERTON RAMS", 60, 72);
   ctx.fillStyle = "#ffffff"; ctx.font = "900 51px Arial"; ctx.fillText("PRACTICE CONDITIONS", 60, 133);
-  ctx.fillStyle = tier.color; ctx.fillRect(0, 170, 18, 240);
-  ctx.fillStyle = "#122b43"; ctx.fillRect(18, 170, 1062, 240);
-  ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText("PRACTICE GUIDANCE · 4–8 PM", 64, 226);
-  ctx.fillStyle = "#ffffff"; fittedFont(ctx, tier.decision.toUpperCase(), 900, 58, 38, 940); ctx.fillText(tier.decision.toUpperCase(), 64, 310);
-  ctx.fillStyle = tier.color; ctx.font = "900 31px Arial"; ctx.fillText(`${tier.zone} · ${tier.range}`, 64, 370);
+  ctx.fillStyle = "#cac46b"; ctx.fillRect(0, 170, 18, 190);
+  ctx.fillStyle = "#122b43"; ctx.fillRect(18, 170, 1062, 190);
+  ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText("PRACTICE WINDOW", 64, 226);
+  ctx.fillStyle = "#ffffff"; ctx.font = "900 58px Arial"; ctx.fillText("6–8 PM", 64, 300);
+  ctx.fillStyle = "#cac46b"; ctx.font = "700 24px Arial"; ctx.fillText("Guidance is shown separately for every hour.", 300, 298);
   const xs = [62, 270, 465, 680, 850];
-  ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "ACTION"].forEach((label, i) => ctx.fillText(label, xs[i], 480));
+  ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "GUIDANCE"].forEach((label, i) => ctx.fillText(label, xs[i], 425));
   state.report.hours.forEach((hour, index) => {
-    const y = 558 + index * 108, rowTier = tierFor(hour.wbgt);
+    const y = 503 + index * 108, rowTier = tierFor(hour.wbgt);
     ctx.strokeStyle = "#223c55"; ctx.beginPath(); ctx.moveTo(58, y + 34); ctx.lineTo(1022, y + 34); ctx.stroke();
     ctx.fillStyle = "#ffffff"; ctx.font = "800 32px Arial"; ctx.fillText(hour.label, xs[0], y); ctx.font = "600 32px Arial"; ctx.fillText(formatTemp(hour.temperature), xs[1], y); ctx.fillText(formatTemp(hour.heatIndex), xs[2], y);
     ctx.fillStyle = rowTier.color; ctx.font = "900 36px Arial"; ctx.fillText(formatTemp(hour.wbgt), xs[3], y); ctx.font = "900 24px Arial"; ctx.fillText(rowTier.short, xs[4], y);
   });
-  ctx.fillStyle = "#112a41"; ctx.fillRect(48, 1120, 984, 285);
-  ctx.fillStyle = "#cac46b"; ctx.font = "900 25px Arial"; ctx.fillText(`KSHSAA · ${tier.zone}`, 76, 1163);
-  ctx.fillStyle = "#e4edf5"; ctx.font = "500 21px Arial";
-  let ruleY = 1205;
-  tier.rules.slice(0, 4).forEach((rule) => { ctx.fillStyle = tier.color; ctx.fillText("•", 76, ruleY); ctx.fillStyle = "#e4edf5"; ruleY = wrapText(ctx, rule, 103, ruleY, 880, 28) + 34; });
+  const practiceHours = state.report.hours.filter((hour, index) => (hour.hour ?? CONFIG.hours[index]) >= CONFIG.practiceStart && (hour.hour ?? CONFIG.hours[index]) < CONFIG.practiceEnd);
+  ctx.fillStyle = "#112a41"; ctx.fillRect(48, 1055, 984, 350);
+  ctx.fillStyle = "#cac46b"; ctx.font = "900 25px Arial"; ctx.fillText("6–8 PM KSHSAA GUIDANCE", 76, 1100);
+  practiceHours.forEach((hour, index) => {
+    const rowTier = tierFor(hour.wbgt), y = 1160 + index * 104;
+    ctx.fillStyle = rowTier.color; ctx.font = "900 26px Arial"; ctx.fillText(`${hour.label} · ${rowTier.short}`, 76, y);
+    ctx.fillStyle = "#e4edf5"; ctx.font = "500 21px Arial"; wrapText(ctx, rowTier.detail, 250, y, 730, 27);
+  });
   ctx.fillStyle = "#8195a9"; ctx.font = "500 17px Arial"; ctx.fillText("Field WBGT reading 30–60 minutes before practice overrides this forecast.", 60, 1460);
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) return;
@@ -254,7 +247,15 @@ async function shareReport() {
 $("refreshTop").addEventListener("click", loadForecast);
 $("refreshButton").addEventListener("click", loadForecast);
 $("shareButton").addEventListener("click", shareReport);
-renderRows(CONFIG.hours.map((hour) => ({ label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
+$("hourRows").addEventListener("click", (event) => {
+  const button = event.target.closest(".hour-row");
+  if (!button) return;
+  const hour = Number(button.dataset.hour);
+  state.selectedHour = state.selectedHour === hour ? null : hour;
+  renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: `${item - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
+  if (state.selectedHour !== null) document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+renderRows(CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
 loadForecast();
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
