@@ -7,24 +7,52 @@ const CONFIG = {
   hours: [16, 17, 18, 19, 20],
   practiceStart: 18,
   practiceEnd: 20,
-  cacheKey: "riverton-wbgt-v3"
+  practiceDays: ["Mon", "Tue", "Thu"],
+  practiceSeasonEnd: "2026-11-12",
+  cacheKey: "riverton-football-hub-v4"
 };
 
-const state = { report: null, loading: false, selectedHour: null };
+const VENUES = {
+  riverton: { name: "Riverton Football Field", address: "7120 SE 70th St, Riverton, KS 66770", lat: 37.0718, lon: -94.7046 },
+  chelsea: { name: "Chelsea High School Stadium", address: "801 W 6th St, Chelsea, OK 74016", lat: 36.5356, lon: -95.4325 },
+  westville: { name: "Yellowjacket Stadium", address: "Buffington Rd & Industrial Rd, Westville, OK 74965", lat: 35.9926, lon: -94.5680 },
+  wyandotte: { name: "Bear Stadium", address: "5 S 1st St, Wyandotte, OK 74370", lat: 36.7942, lon: -94.7252 },
+  fairland: { name: "Fairland Stadium", address: "202 W Washington Ave, Fairland, OK 74343", lat: 36.7512, lon: -94.8483 },
+  quapaw: { name: "Quapaw Football Stadium", address: "305 W 1st St, Quapaw, OK 74363", lat: 36.9540, lon: -94.7890 },
+  commerce: { name: "Commerce Stadium", address: "420 D St, Commerce, OK 74339", lat: 36.9340, lon: -94.8727 },
+  baxter: { name: "Baxter Springs Football Field", address: "100 N Military Ave, Baxter Springs, KS 66713", lat: 37.0236, lon: -94.7355 },
+  galena: { name: "Galena Football Field", address: "702 E 7th St, Galena, KS 66739", lat: 37.0759, lon: -94.6397 }
+};
+
+const GAMES = [
+  { id: "wk1", week: "Week 1", date: "2026-09-12", time: "18:00", opponent: "Chelsea", side: "away", venue: "chelsea" },
+  { id: "wk2", week: "Week 2", date: "2026-09-19", time: "18:00", opponent: "Westville", side: "away", venue: "westville" },
+  { id: "wk3", week: "Week 3", date: "2026-09-26", time: "18:00", opponent: "Wyandotte", side: "home", venue: "riverton" },
+  { id: "wk4", week: "Week 4", date: "2026-10-03", time: "18:00", opponent: "Fairland", side: "home", venue: "riverton", conference: true },
+  { id: "wk5", week: "Week 5", date: "2026-10-10", time: "18:00", opponent: "Quapaw", side: "away", venue: "quapaw", conference: true },
+  { id: "wk6", week: "Week 6", date: "2026-10-17", time: "18:00", opponent: "Commerce", side: "home", venue: "riverton", conference: true },
+  { id: "wk7", week: "Week 7", date: "2026-10-24", time: "18:00", opponent: "Baxter", side: "away", venue: "baxter", conference: true },
+  { id: "wk8", week: "Week 8", date: "2026-10-31", time: null, opponent: "Galena", side: "home", venue: "riverton", conference: true },
+  { id: "wk9", week: "Week 9", date: "2026-11-07", time: null, opponent: "Playoffs", side: "tbd", venue: null, postseason: true },
+  { id: "wk10", week: "Week 10", date: "2026-11-14", time: null, opponent: "Super Bowl", side: "tbd", venue: "commerce", postseason: true }
+];
+
+const state = { report: null, loading: false, selectedHour: null, activeView: "home", nextGame: null };
 const $ = (id) => document.getElementById(id);
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+}
+
 function chicagoParts(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: CONFIG.timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23"
-  }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(date);
   const get = (type) => parts.find((part) => part.type === type)?.value || "";
   return { year: get("year"), month: get("month"), day: get("day"), hour: Number(get("hour")) };
 }
 
-function localDateKey(parts) { return `${parts.year}-${parts.month}-${parts.day}`; }
-function localDateLabel(date = new Date()) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(date);
-}
+function localDateKey(parts = chicagoParts()) { return `${parts.year}-${parts.month}-${parts.day}`; }
+function localDateLabel(date = new Date()) { return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(date); }
+function partsForKey(key) { const [year, month, day] = key.split("-"); return { year, month, day, hour: 12 }; }
 
 function chicagoOffset(parts) {
   const probe = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), 18));
@@ -32,22 +60,85 @@ function chicagoOffset(parts) {
   return zone.replace("GMT", "");
 }
 
-function targetDate(parts, hour) {
-  return new Date(`${localDateKey(parts)}T${String(hour).padStart(2, "0")}:00:00${chicagoOffset(parts)}`);
+function dateAt(key, time = "12:00") { return new Date(`${key}T${time}:00${chicagoOffset(partsForKey(key))}`); }
+function targetDate(parts, hour) { return dateAt(localDateKey(parts), `${String(hour).padStart(2, "0")}:00`); }
+function gameStart(game) { return dateAt(game.date, game.time || "12:00"); }
+function gameEnd(game) { return game.time ? new Date(gameStart(game).getTime() + 2 * 60 * 60 * 1000) : dateAt(game.date, "23:59"); }
+function gameVenue(game) { return game.venue ? VENUES[game.venue] : null; }
+
+function formatGameDate(game) {
+  const date = dateAt(game.date, "12:00");
+  const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "short", month: "short", day: "numeric" }).format(date);
+  const time = game.time ? new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" }).format(gameStart(game)) : "Time TBD";
+  return { day, time };
+}
+
+function nextGame(now = new Date()) { return GAMES.find((game) => gameEnd(game) > now) || null; }
+
+function nextPractice(now = new Date()) {
+  const today = chicagoParts(now);
+  const noon = new Date(Date.UTC(Number(today.year), Number(today.month) - 1, Number(today.day), 12));
+  for (let index = 0; index < 120; index += 1) {
+    const probe = new Date(noon.getTime() + index * 86400000);
+    const keyParts = chicagoParts(probe), key = localDateKey(keyParts);
+    if (key > CONFIG.practiceSeasonEnd) return null;
+    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "short" }).format(probe);
+    if (!CONFIG.practiceDays.includes(weekday)) continue;
+    const start = dateAt(key, "18:00"), end = dateAt(key, "20:00");
+    if (end > now) return { type: "practice", title: "Football practice", start, end, date: key, time: "18:00" };
+  }
+  return null;
+}
+
+function nextTeamEvent(now = new Date()) {
+  const practice = nextPractice(now), game = nextGame(now);
+  const gameEvent = game ? { type: "game", title: game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "at" : "vs"} ${game.opponent}`, start: gameStart(game), end: gameEnd(game), game } : null;
+  if (!practice) return gameEvent;
+  if (!gameEvent) return practice;
+  return practice.start <= gameEvent.start ? practice : gameEvent;
+}
+
+function relativeEventText(event, now = new Date()) {
+  if (!event) return "Season complete";
+  if (event.start <= now && event.end > now) return event.type === "practice" ? "Practice is underway" : "Game day";
+  const diff = event.start.getTime() - now.getTime(), days = Math.floor(diff / 86400000);
+  const eventKey = localDateKey(chicagoParts(event.start)), todayKey = localDateKey(chicagoParts(now));
+  if (eventKey === todayKey) return "Today";
+  if (days < 1) return "Tomorrow";
+  return `${days + 1} days away`;
+}
+
+function renderNextEvent() {
+  const event = nextTeamEvent();
+  $("nextEventCard").classList.remove("loading-card");
+  if (!event) {
+    $("nextEventTitle").textContent = "Season complete";
+    $("nextEventMeta").textContent = "Thanks for a great season. Go Rams!";
+    $("nextEventCountdown").textContent = "2026";
+    return;
+  }
+  $("nextEventTitle").textContent = event.type === "practice" ? "Football practice" : event.title;
+  if (event.type === "practice") {
+    const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric" }).format(event.start);
+    $("nextEventMeta").textContent = `${day} · 6–8 PM · Riverton`;
+  } else {
+    const formatted = formatGameDate(event.game), venue = gameVenue(event.game);
+    $("nextEventMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
+  }
+  $("nextEventCountdown").textContent = relativeEventText(event);
 }
 
 function durationMs(value) {
   const match = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(value || "");
   if (!match) return 0;
-  return ((Number(match[1] || 0) * 24 + Number(match[2] || 0)) * 60 * 60 + Number(match[3] || 0) * 60 + Number(match[4] || 0)) * 1000;
+  return ((Number(match[1] || 0) * 24 + Number(match[2] || 0)) * 3600 + Number(match[3] || 0) * 60 + Number(match[4] || 0)) * 1000;
 }
 
 function valueAt(series, target) {
   if (!series?.values) return null;
   const targetMs = target.getTime();
   const item = series.values.find((entry) => {
-    const [startText, span] = entry.validTime.split("/");
-    const start = new Date(startText).getTime();
+    const [startText, span] = entry.validTime.split("/"), start = new Date(startText).getTime();
     const end = span?.startsWith("P") ? start + durationMs(span) : new Date(span).getTime();
     return targetMs >= start && targetMs < end;
   });
@@ -59,33 +150,17 @@ function valueAt(series, target) {
 
 function tierFor(wbgt) {
   if (wbgt === null) return { short: "WAITING", decision: "Forecast unavailable", detail: "No NWS WBGT grid value is available for this hour yet.", color: "#8297ad", className: "waiting", range: "Waiting for NWS data", zone: "", rules: [] };
-  if (wbgt >= 89.8) return {
-    short: "CANCEL", decision: "No outdoor activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE",
-    rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."]
-  };
-  if (wbgt >= 87.8) return {
-    short: "DELAY", decision: "Delay or reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE",
-    rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."]
-  };
-  if (wbgt >= 84.7) return {
-    short: "MODIFY", decision: "Modify equipment and practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE",
-    rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."]
-  };
-  if (wbgt >= 80) return {
-    short: "CAUTION", decision: "Increase water and rest breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE",
-    rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."]
-  };
-  return {
-    short: "NORMAL", decision: "Normal practice precautions", detail: "Continue scheduled hydration and rest breaks.", color: "#4acb8a", className: "normal", range: "79.9°F or lower", zone: "GREEN ZONE",
-    rules: ["Normal activities are permitted.", "Provide at least three separate rest breaks each hour, at least 3 minutes each.", "All participants must have unrestricted access to water.", "Continue monitoring athletes for heat-illness symptoms."]
-  };
+  if (wbgt >= 89.8) return { short: "CANCEL", decision: "No outdoor activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE", rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."] };
+  if (wbgt >= 87.8) return { short: "DELAY", decision: "Delay or reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE", rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."] };
+  if (wbgt >= 84.7) return { short: "MODIFY", decision: "Modify equipment and practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE", rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."] };
+  if (wbgt >= 80) return { short: "CAUTION", decision: "Increase water and rest breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE", rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."] };
+  return { short: "NORMAL", decision: "Normal practice precautions", detail: "Continue scheduled hydration and rest breaks.", color: "#4acb8a", className: "normal", range: "79.9°F or lower", zone: "GREEN ZONE", rules: ["Normal activities are permitted.", "Provide at least three separate rest breaks each hour, at least 3 minutes each.", "All participants must have unrestricted access to water.", "Continue monitoring athletes for heat-illness symptoms."] };
 }
 
 function formatTemp(value) { return value === null ? "—" : `${Math.round(value)}°`; }
 
 async function fetchJson(url, timeout = 12000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, { headers: { Accept: "application/geo+json" }, cache: "no-store", signal: controller.signal });
     if (!response.ok) throw new Error(`NWS returned ${response.status}`);
@@ -95,15 +170,8 @@ async function fetchJson(url, timeout = 12000) {
 
 function buildHours(properties, parts) {
   return CONFIG.hours.map((hour) => {
-    const target = targetDate(parts, hour);
-    const heatIndex = valueAt(properties.heatIndex, target);
-    return {
-      hour,
-      label: `${hour - 12} PM`,
-      temperature: valueAt(properties.temperature, target),
-      heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target),
-      wbgt: valueAt(properties.wetBulbGlobeTemperature, target)
-    };
+    const target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
+    return { hour, label: `${hour - 12} PM`, temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
   });
 }
 
@@ -111,18 +179,13 @@ function readCache(dateKey) {
   try { const cached = JSON.parse(localStorage.getItem(CONFIG.cacheKey) || "null"); return cached?.dateKey === dateKey ? cached : null; }
   catch { return null; }
 }
-
-function saveCache(report) {
-  try { localStorage.setItem(CONFIG.cacheKey, JSON.stringify(report)); } catch { /* storage is optional */ }
-}
+function saveCache(report) { try { localStorage.setItem(CONFIG.cacheKey, JSON.stringify(report)); } catch { /* optional */ } }
 
 function renderRows(hours) {
   $("hourRows").innerHTML = hours.map((hour, index) => {
-    const tier = tierFor(hour.wbgt), hourValue = hour.hour ?? CONFIG.hours[index];
-    const slotEnd = hourValue + 1, endLabel = slotEnd === 12 ? "12 PM" : slotEnd > 12 ? `${slotEnd - 12} PM` : `${slotEnd} AM`;
-    const slotLabel = hourValue === CONFIG.practiceEnd ? `${hour.label} conditions` : `${hour.label}–${endLabel}`;
-    const selected = state.selectedHour === hourValue;
-    const practiceClass = hourValue >= CONFIG.practiceStart && hourValue < CONFIG.practiceEnd ? " practice-hour" : "";
+    const tier = tierFor(hour.wbgt), hourValue = hour.hour ?? CONFIG.hours[index], slotEnd = hourValue + 1;
+    const endLabel = slotEnd > 12 ? `${slotEnd - 12} PM` : `${slotEnd} AM`, slotLabel = hourValue === CONFIG.practiceEnd ? `${hour.label} conditions` : `${hour.label}–${endLabel}`;
+    const selected = state.selectedHour === hourValue, practiceClass = hourValue >= CONFIG.practiceStart && hourValue < CONFIG.practiceEnd ? " practice-hour" : "";
     return `<div class="hour-item${practiceClass}">
       <button class="hour-row" type="button" data-hour="${hourValue}" aria-expanded="${selected}" aria-controls="guidance-${hourValue}">
         <strong>${hour.label}</strong><span>${formatTemp(hour.temperature)}</span><span>${formatTemp(hour.heatIndex)}</span><b class="row-${tier.className}">${formatTemp(hour.wbgt)}</b><em class="row-${tier.className}">${tier.short}</em>
@@ -137,9 +200,18 @@ function renderRows(hours) {
   }).join("");
 }
 
+function renderHomeConditions(report) {
+  const hours = report?.hours?.filter((hour) => hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd) || [];
+  if (!hours.some((hour) => hour.wbgt !== null)) { $("homeConditions").innerHTML = '<p class="empty-state">Practice-hour WBGT values are not available yet. Open Conditions for the latest status.</p>'; return; }
+  $("homeConditions").innerHTML = hours.map((hour) => {
+    const tier = tierFor(hour.wbgt);
+    return `<button class="mini-condition" type="button" data-hour-jump="${hour.hour}"><strong>${hour.label}</strong><b style="color:${tier.color}">${formatTemp(hour.wbgt)}</b><span style="color:${tier.color}">${tier.short} · View rules</span></button>`;
+  }).join("");
+}
+
 function renderAlerts(alerts) {
   const heatAlerts = (alerts || []).filter((feature) => /heat/i.test(feature.properties?.event || "")).slice(0, 1);
-  $("alertArea").innerHTML = heatAlerts.map((feature) => `<div class="alert-card"><span class="alert-icon">!</span><div><strong>${feature.properties.event}</strong><p>${feature.properties.headline || "A National Weather Service heat alert is in effect."}</p></div></div>`).join("");
+  $("alertArea").innerHTML = heatAlerts.map((feature) => `<div class="alert-card"><span class="alert-icon">!</span><div><strong>${escapeHtml(feature.properties.event)}</strong><p>${escapeHtml(feature.properties.headline || "A National Weather Service heat alert is in effect.")}</p></div></div>`).join("");
 }
 
 function renderReport(report, fromCache = false) {
@@ -148,27 +220,11 @@ function renderReport(report, fromCache = false) {
   $("dateLabel").textContent = `${report.dateLabel} · Practice 6–8 PM · Ages 8U`;
   $("shareButton").disabled = validHours.length === 0;
   renderRows(report.hours);
+  renderHomeConditions(report);
   $("updatedLine").textContent = `${fromCache ? "Saved forecast" : `Updated ${new Date(report.updatedAt).toLocaleTimeString("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" })}`} · Forecast only · Not a field measurement`;
 }
 
-function renderLoading() {
-  state.loading = true;
-  $("refreshTop").classList.add("loading");
-  $("refreshButton").textContent = "Refreshing…";
-  $("refreshButton").disabled = true;
-  $("notice").textContent = "Checking the NWS forecast grid…";
-}
-
-function renderDone() {
-  state.loading = false;
-  $("refreshTop").classList.remove("loading");
-  $("refreshButton").textContent = "Refresh forecast";
-  $("refreshButton").disabled = false;
-}
-
-async function loadForecast() {
-  if (state.loading) return;
-  renderLoading(); $("notice").textContent = "";
+async function loadPracticeForecast() {
   const parts = chicagoParts(), dateKey = localDateKey(parts), cached = readCache(dateKey);
   try {
     const [gridResult, alertsResult] = await Promise.allSettled([fetchJson(CONFIG.gridUrl), fetchJson(CONFIG.alertsUrl, 8000)]);
@@ -178,13 +234,99 @@ async function loadForecast() {
     renderReport(report);
     if (alertsResult.status === "fulfilled") renderAlerts(alertsResult.value.features);
   } catch (error) {
-    if (cached) { renderReport(cached, true); $("notice").textContent = "Showing the last saved forecast because the NWS feed did not respond."; }
+    if (cached) { renderReport(cached, true); $("notice").textContent = "Showing the last saved practice forecast because the NWS feed did not respond."; }
     else {
       const empty = CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null }));
       renderReport({ dateKey, dateLabel: localDateLabel(), updatedAt: new Date().toISOString(), hours: empty });
       $("notice").textContent = error?.name === "AbortError" ? "The NWS request timed out. Tap refresh to try again." : "The NWS feed did not respond. Tap refresh to try again.";
     }
-  } finally { renderDone(); }
+  }
+}
+
+function renderNextGame(game) {
+  state.nextGame = game;
+  if (!game) {
+    $("nextGameTitle").textContent = "Season complete";
+    $("nextGameBadge").textContent = "Go Rams";
+    $("nextGameMeta").textContent = "The 2026 Pee Wee schedule is complete.";
+    $("gameWeather").innerHTML = '<p class="empty-state">Thanks for a great season.</p>';
+    $("nextGameActions").innerHTML = '<button type="button" data-open-view="schedule">View season</button>';
+    return;
+  }
+  const formatted = formatGameDate(game), venue = gameVenue(game);
+  const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "@" : "vs"} ${game.opponent}`;
+  $("nextGameTitle").textContent = opponentText;
+  $("nextGameBadge").textContent = game.side === "home" ? "Home" : game.side === "away" ? "Away" : "Postseason";
+  $("nextGameMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
+  $("nextGameActions").innerHTML = `${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to calendar</button><button type="button" data-open-view="schedule">Full schedule</button>`;
+}
+
+async function loadGameWeather(game) {
+  if (!game) return;
+  if (!game.time) { $("gameWeather").innerHTML = '<p class="empty-state">Game-day weather will appear after the kickoff time is announced.</p>'; return; }
+  const venue = gameVenue(game);
+  if (!venue) { $("gameWeather").innerHTML = '<p class="empty-state">Game-day weather will appear after the location is announced.</p>'; return; }
+  const start = gameStart(game), diffDays = (start.getTime() - Date.now()) / 86400000;
+  if (diffDays > 7.5) {
+    const opens = new Date(start.getTime() - 7 * 86400000);
+    const label = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, month: "short", day: "numeric" }).format(opens);
+    $("gameWeather").innerHTML = `<p class="empty-state">Game-day forecast becomes available around ${label}. The card will update automatically.</p>`;
+    return;
+  }
+  if (diffDays < -1) return;
+  $("gameWeather").innerHTML = '<p class="empty-state">Loading game-day weather…</p>';
+  try {
+    const point = await fetchJson(`https://api.weather.gov/points/${venue.lat},${venue.lon}`);
+    const [hourly, grid] = await Promise.all([fetchJson(point.properties.forecastHourly), fetchJson(point.properties.forecastGridData)]);
+    const period = hourly.properties.periods.find((item) => start >= new Date(item.startTime) && start < new Date(item.endTime)) || hourly.properties.periods.find((item) => Math.abs(new Date(item.startTime).getTime() - start.getTime()) < 3600000);
+    if (!period) throw new Error("No game-hour forecast");
+    const wbgt = valueAt(grid.properties.wetBulbGlobeTemperature, start), rain = period.probabilityOfPrecipitation?.value;
+    $("gameWeather").innerHTML = `<div class="weather-grid">
+      <div><small>Temperature</small><strong>${period.temperature}°</strong></div>
+      <div><small>Rain</small><strong>${rain ?? 0}%</strong></div>
+      <div><small>${wbgt === null ? "Wind" : "WBGT"}</small><strong>${wbgt === null ? escapeHtml(period.windSpeed) : formatTemp(wbgt)}</strong></div>
+    </div><p class="weather-summary">${escapeHtml(period.shortForecast)} · Wind ${escapeHtml(period.windSpeed)} ${escapeHtml(period.windDirection)}</p>`;
+  } catch {
+    $("gameWeather").innerHTML = '<p class="empty-state">The NWS game-day forecast is temporarily unavailable. Tap refresh to try again.</p>';
+  }
+}
+
+function mapsUrl(venue) { return `https://maps.apple.com/?daddr=${encodeURIComponent(`${venue.name}, ${venue.address}`)}`; }
+
+function renderSchedule() {
+  $("scheduleRows").innerHTML = GAMES.map((game) => {
+    const formatted = formatGameDate(game), venue = gameVenue(game), postseason = game.postseason ? " postseason" : "", side = game.side === "home" ? "home" : "away";
+    const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "@" : "vs"} ${game.opponent}`;
+    return `<article class="schedule-card ${side}${postseason}">
+      <div class="schedule-top"><div><span class="week-label">${game.week}${game.conference ? " · Conference" : game.postseason ? " · Postseason" : ""}</span><h3>${opponentText}</h3></div><div class="schedule-date">${formatted.day}<span>${formatted.time}</span></div></div>
+      <div class="schedule-actions">${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to calendar</button></div>
+    </article>`;
+  }).join("");
+}
+
+function icsEscape(value) { return String(value || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;"); }
+function icsDateTime(date) { return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+function compactDate(key) { return key.replace(/-/g, ""); }
+function nextDateKey(key) { const date = new Date(`${key}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + 1); return date.toISOString().slice(0, 10); }
+
+function gameIcsBlock(game) {
+  const venue = gameVenue(game), title = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? `Riverton Pee Wee ${game.opponent}` : `Riverton Rams ${game.side === "away" ? "at" : "vs"} ${game.opponent}`;
+  const dates = game.time ? `DTSTART:${icsDateTime(gameStart(game))}\r\nDTEND:${icsDateTime(gameEnd(game))}` : `DTSTART;VALUE=DATE:${compactDate(game.date)}\r\nDTEND;VALUE=DATE:${compactDate(nextDateKey(game.date))}`;
+  return `BEGIN:VEVENT\r\nUID:${game.id}-2026@riverton-football-hub\r\nDTSTAMP:${icsDateTime(new Date())}\r\n${dates}\r\nSUMMARY:${icsEscape(title)}\r\nLOCATION:${icsEscape(venue ? `${venue.name}, ${venue.address}` : "TBD")}\r\nDESCRIPTION:${icsEscape("Riverton Pee Wee football. Verify schedule changes with the team.")}\r\nEND:VEVENT`;
+}
+
+function downloadCalendar(games, fileName) {
+  const body = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Riverton Football Hub//Pee Wee 2026//EN\r\nCALSCALE:GREGORIAN\r\n${games.map(gameIcsBlock).join("\r\n")}\r\nEND:VCALENDAR\r\n`;
+  const url = URL.createObjectURL(new Blob([body], { type: "text/calendar;charset=utf-8" })), link = document.createElement("a");
+  link.href = url; link.download = fileName; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $("notice").textContent = games.length > 1 ? "Season calendar downloaded. Open it to add the games." : "Game calendar file downloaded. Open it to add the event.";
+}
+
+function switchView(view) {
+  state.activeView = view;
+  document.querySelectorAll(".app-view").forEach((section) => { const active = section.id === `view-${view}`; section.hidden = !active; section.classList.toggle("active", active); });
+  document.querySelectorAll(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -197,38 +339,31 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line, x, y); return y;
 }
 
-function fittedFont(ctx, text, weight, startSize, minSize, maxWidth) {
-  let size = startSize;
-  do { ctx.font = `${weight} ${size}px Arial`; size -= 2; } while (ctx.measureText(text).width > maxWidth && size >= minSize);
-}
-
 async function shareReport() {
-  if (!state.report) return;
-  const validHours = state.report.hours.filter((hour) => hour.wbgt !== null);
-  if (!validHours.length) return;
+  if (!state.report?.hours.some((hour) => hour.wbgt !== null)) return;
   const canvas = document.createElement("canvas"), scale = 2;
   canvas.width = 1080 * scale; canvas.height = 1500 * scale;
   const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
   ctx.fillStyle = "#061522"; ctx.fillRect(0, 0, 1080, 1500);
   ctx.fillStyle = "#003d7a"; ctx.fillRect(0, 0, 1080, 170);
-  ctx.fillStyle = "#cac46b"; ctx.font = "900 39px Arial"; ctx.fillText("RIVERTON RAMS", 60, 72);
+  ctx.fillStyle = "#d7cf69"; ctx.font = "900 39px Arial"; ctx.fillText("RIVERTON RAMS", 60, 72);
   ctx.fillStyle = "#ffffff"; ctx.font = "900 51px Arial"; ctx.fillText("PRACTICE CONDITIONS", 60, 133);
-  ctx.fillStyle = "#cac46b"; ctx.fillRect(0, 170, 18, 190);
+  ctx.fillStyle = "#d7cf69"; ctx.fillRect(0, 170, 18, 190);
   ctx.fillStyle = "#122b43"; ctx.fillRect(18, 170, 1062, 190);
   ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText("PRACTICE WINDOW", 64, 226);
   ctx.fillStyle = "#ffffff"; ctx.font = "900 58px Arial"; ctx.fillText("6–8 PM", 64, 300);
-  ctx.fillStyle = "#cac46b"; ctx.font = "700 24px Arial"; ctx.fillText("Guidance is shown separately for every hour.", 300, 298);
+  ctx.fillStyle = "#d7cf69"; ctx.font = "700 24px Arial"; ctx.fillText("Hourly KSHSAA guidance", 300, 298);
   const xs = [62, 270, 465, 680, 850];
-  ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "GUIDANCE"].forEach((label, i) => ctx.fillText(label, xs[i], 425));
+  ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "GUIDANCE"].forEach((label, index) => ctx.fillText(label, xs[index], 425));
   state.report.hours.forEach((hour, index) => {
     const y = 503 + index * 108, rowTier = tierFor(hour.wbgt);
     ctx.strokeStyle = "#223c55"; ctx.beginPath(); ctx.moveTo(58, y + 34); ctx.lineTo(1022, y + 34); ctx.stroke();
     ctx.fillStyle = "#ffffff"; ctx.font = "800 32px Arial"; ctx.fillText(hour.label, xs[0], y); ctx.font = "600 32px Arial"; ctx.fillText(formatTemp(hour.temperature), xs[1], y); ctx.fillText(formatTemp(hour.heatIndex), xs[2], y);
     ctx.fillStyle = rowTier.color; ctx.font = "900 36px Arial"; ctx.fillText(formatTemp(hour.wbgt), xs[3], y); ctx.font = "900 24px Arial"; ctx.fillText(rowTier.short, xs[4], y);
   });
-  const practiceHours = state.report.hours.filter((hour, index) => (hour.hour ?? CONFIG.hours[index]) >= CONFIG.practiceStart && (hour.hour ?? CONFIG.hours[index]) < CONFIG.practiceEnd);
+  const practiceHours = state.report.hours.filter((hour) => hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd);
   ctx.fillStyle = "#112a41"; ctx.fillRect(48, 1055, 984, 350);
-  ctx.fillStyle = "#cac46b"; ctx.font = "900 25px Arial"; ctx.fillText("6–8 PM KSHSAA GUIDANCE", 76, 1100);
+  ctx.fillStyle = "#d7cf69"; ctx.font = "900 25px Arial"; ctx.fillText("6–8 PM KSHSAA GUIDANCE", 76, 1100);
   practiceHours.forEach((hour, index) => {
     const rowTier = tierFor(hour.wbgt), y = 1160 + index * 104;
     ctx.fillStyle = rowTier.color; ctx.font = "900 26px Arial"; ctx.fillText(`${hour.label} · ${rowTier.short}`, 76, y);
@@ -240,22 +375,45 @@ async function shareReport() {
   const file = new File([blob], "riverton-rams-practice-conditions.png", { type: "image/png" });
   try {
     if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "Riverton Rams Practice Conditions", files: [file] });
-    else { const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = file.name; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); $("notice").textContent = "Report image downloaded."; }
+    else { const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = file.name; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); $("notice").textContent = "Practice card downloaded."; }
   } catch (error) { if (error?.name !== "AbortError") $("notice").textContent = "The image could not be shared. Try again."; }
 }
 
-$("refreshTop").addEventListener("click", loadForecast);
-$("refreshButton").addEventListener("click", loadForecast);
+async function refreshHub() {
+  if (state.loading) return;
+  state.loading = true; $("refreshTop").classList.add("loading"); $("refreshButton").textContent = "Refreshing…"; $("refreshButton").disabled = true; $("notice").textContent = "Refreshing conditions and game-day weather…";
+  const game = nextGame(); renderNextEvent(); renderNextGame(game);
+  await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game)]);
+  state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh forecast"; $("refreshButton").disabled = false;
+  if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
+}
+
+$("refreshTop").addEventListener("click", refreshHub);
+$("refreshButton").addEventListener("click", refreshHub);
 $("shareButton").addEventListener("click", shareReport);
+$("addSeasonButton").addEventListener("click", () => downloadCalendar(GAMES, "riverton-pee-wee-2026.ics"));
+
+document.addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-view], [data-open-view]");
+  if (viewButton) { switchView(viewButton.dataset.view || viewButton.dataset.openView); return; }
+  const calendarButton = event.target.closest("[data-calendar-game]");
+  if (calendarButton) { const game = GAMES.find((item) => item.id === calendarButton.dataset.calendarGame); if (game) downloadCalendar([game], `riverton-${game.id}.ics`); return; }
+  const hourJump = event.target.closest("[data-hour-jump]");
+  if (hourJump) { state.selectedHour = Number(hourJump.dataset.hourJump); switchView("conditions"); renderRows(state.report?.hours || []); setTimeout(() => document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 220); }
+});
+
 $("hourRows").addEventListener("click", (event) => {
   const button = event.target.closest(".hour-row");
   if (!button) return;
-  const hour = Number(button.dataset.hour);
-  state.selectedHour = state.selectedHour === hour ? null : hour;
+  const hour = Number(button.dataset.hour); state.selectedHour = state.selectedHour === hour ? null : hour;
   renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: `${item - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
   if (state.selectedHour !== null) document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
+
+renderSchedule();
+renderNextEvent();
+renderNextGame(nextGame());
 renderRows(CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
-loadForecast();
+refreshHub();
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));

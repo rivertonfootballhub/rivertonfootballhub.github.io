@@ -1,19 +1,22 @@
-# Riverton Rams Practice Conditions
+# Riverton Football Hub
 
-Mobile-first GitHub Pages app for Riverton, Kansas football-practice heat safety.
+Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
-- Reads the NWS `wetBulbGlobeTemperature` forecast grid for the Riverton USD 404 athletic-field location from 4–8 PM.
-- Shows air temperature, apparent/heat-index temperature, WBGT, active heat alerts, and hour-specific KSHSAA guidance.
+- Calculates the next team event from Monday, Tuesday and Thursday 6–8 PM practices plus the 2026 Pee Wee game schedule.
+- Shows NWS game-day weather when the next game enters the forecast window.
+- Provides the full schedule, Apple Maps directions and downloadable calendar events.
+- Reads the NWS WBGT forecast grid for the Riverton athletic field and opens the exact KSHSAA rules for each hour.
+- Links the official Riverton Elementary calendar, weekly USD 404 lunch menu, ParentSquare, Infinite Campus and grade-level supply lists.
 - Creates a branded PNG practice card through the device share sheet.
-- Treats 6–8 PM as the practice window while retaining 4–5 PM as lead-up context.
-- Each hourly row opens the exact KSHSAA rules for that hour; no earlier hour controls an overall practice decision.
-- Uses the Riverton USD 404 Rams logo and colors.
-- Stores the latest successful daily forecast locally and never leaves the page in a permanent loading state.
 
 ## GitHub Pages
 
-Publish from the repository root on the `main` branch. No build step is required.
+Publish every file in this package from the repository root on the `main` branch. No build step is required.
+
+## Schedule assumptions
+
+Regular-season games begin at 6 PM except the October 31 game. October 31, playoffs and the Super Bowl remain TBD. Verify changes with the team.
 
 ## Safety
 
-This is a forecast, not a field measurement. An on-field WBGT reading in direct sun 30–60 minutes before practice overrides the forecast.
+Forecast values are not field measurements. An on-field WBGT reading in direct sun 30–60 minutes before practice overrides the forecast.

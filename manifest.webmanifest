@@ -1,13 +1,14 @@
 {
-  "name": "Riverton Rams Practice Conditions",
-  "short_name": "Rams Conditions",
-  "description": "NWS WBGT forecast grid for Riverton football practice.",
+  "name": "Riverton Football Hub",
+  "short_name": "Football Hub",
+  "description": "Riverton Pee Wee schedule, game-day weather, practice WBGT guidance and elementary resources.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#061522",
   "theme_color": "#003d7a",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ]
 }

@@ -6,65 +6,132 @@
   <meta name="theme-color" content="#003d7a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Rams Conditions">
-  <title>Riverton Rams Practice Conditions</title>
-  <meta name="description" content="NWS WBGT forecast grid and KSHSAA football practice guidance for Riverton, Kansas.">
+  <meta name="apple-mobile-web-app-title" content="Football Hub">
+  <title>Riverton Football Hub</title>
+  <meta name="description" content="Riverton Pee Wee football schedule, game-day weather, practice WBGT guidance and elementary family resources.">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="icon" href="./icon-512.png" type="image/png">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="app-shell">
     <header class="brand-card">
       <img id="brandLogo" src="./riverton-logo.png" alt="Riverton USD 404 Rams">
-      <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh forecast">↻</button>
+      <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh hub">↻</button>
     </header>
 
     <div class="location-row">
       <div>
-        <p class="eyebrow">Riverton, Kansas</p>
-        <h1>Rams Practice Conditions</h1>
+        <p class="eyebrow">Riverton Pee Wee · 2026</p>
+        <h1>Riverton Football Hub</h1>
       </div>
-      <span class="official-badge">NWS Grid WBGT</span>
+      <span class="official-badge">3rd &amp; 4th</span>
     </div>
 
     <section id="alertArea" class="alert-area" aria-live="polite"></section>
 
-    <div class="section-title">
-      <div>
-        <p id="dateLabel" class="eyebrow">Today · Practice 6–8 PM · Ages 8U</p>
-        <h2>Hourly outlook</h2>
-        <p class="tap-hint">Tap an hour to view its exact KSHSAA guidance.</p>
-      </div>
-      <span class="sun-pill">☀ Direct sun</span>
-    </div>
+    <section id="view-home" class="app-view active" aria-labelledby="nav-home">
+      <section id="nextEventCard" class="hero-card loading-card" aria-live="polite">
+        <p class="card-kicker">Next event</p>
+        <h2 id="nextEventTitle">Checking the calendar…</h2>
+        <p id="nextEventMeta">Practice is Monday, Tuesday and Thursday from 6–8 PM.</p>
+        <div id="nextEventCountdown" class="countdown-pill">Loading</div>
+      </section>
 
-    <section class="hourly-card" aria-label="Hourly WBGT forecast">
-      <div class="table-head"><span>Time</span><span>Air</span><span>Heat</span><span>WBGT</span><span>Guidance</span></div>
-      <div id="hourRows"></div>
+      <section class="dashboard-card">
+        <div class="card-heading">
+          <div><p class="card-kicker">Today’s conditions</p><h2>Practice window · 6–8 PM</h2></div>
+          <button class="text-button" type="button" data-open-view="conditions">Full outlook</button>
+        </div>
+        <div id="homeConditions" class="mini-condition-list"><p class="empty-state">Checking the NWS forecast…</p></div>
+      </section>
+
+      <section id="nextGameCard" class="dashboard-card next-game-card" aria-live="polite">
+        <div class="card-heading">
+          <div><p class="card-kicker">Next game</p><h2 id="nextGameTitle">Loading schedule…</h2></div>
+          <span id="nextGameBadge" class="game-badge">2026</span>
+        </div>
+        <p id="nextGameMeta" class="game-meta"></p>
+        <div id="gameWeather" class="game-weather"><p class="empty-state">Checking forecast availability…</p></div>
+        <div id="nextGameActions" class="inline-actions"></div>
+      </section>
     </section>
 
-    <section class="field-note">
-      <div class="meter-icon" aria-hidden="true">°</div>
-      <div>
-        <h3>Field reading wins</h3>
-        <p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p>
+    <section id="view-conditions" class="app-view" aria-labelledby="nav-conditions" hidden>
+      <div class="page-heading">
+        <div><p id="dateLabel" class="eyebrow">Today · Practice 6–8 PM · Ages 8U</p><h2>Practice conditions</h2></div>
+        <span class="sun-pill">☀ Direct sun</span>
+      </div>
+      <p class="page-intro">Tap an hour to view its exact KSHSAA guidance.</p>
+
+      <section class="hourly-card" aria-label="Hourly WBGT forecast">
+        <div class="table-head"><span>Time</span><span>Air</span><span>Heat</span><span>WBGT</span><span>Guidance</span></div>
+        <div id="hourRows"></div>
+      </section>
+
+      <section class="field-note">
+        <div class="meter-icon" aria-hidden="true">°</div>
+        <div><h3>Field reading wins</h3><p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p></div>
+      </section>
+
+      <div class="actions">
+        <button id="shareButton" class="primary-button" type="button" disabled>Share practice card</button>
+        <button id="refreshButton" class="secondary-button" type="button">Refresh forecast</button>
       </div>
     </section>
 
-    <div class="actions">
-      <button id="shareButton" class="primary-button" type="button" disabled>Share practice card</button>
-      <button id="refreshButton" class="secondary-button" type="button">Refresh forecast</button>
-    </div>
+    <section id="view-schedule" class="app-view" aria-labelledby="nav-schedule" hidden>
+      <div class="page-heading">
+        <div><p class="eyebrow">2026 Pee Wee</p><h2>Season schedule</h2></div>
+        <button id="addSeasonButton" class="compact-button" type="button">Add season</button>
+      </div>
+      <p class="page-intro">Kickoff is 6 PM unless marked TBD. Tap Directions for Apple Maps.</p>
+      <div id="scheduleRows" class="schedule-list"></div>
+    </section>
+
+    <section id="view-school" class="app-view" aria-labelledby="nav-school" hidden>
+      <div class="page-heading">
+        <div><p class="eyebrow">Riverton Elementary</p><h2>Family resources</h2></div>
+      </div>
+
+      <section class="resource-card">
+        <div class="card-heading">
+          <div><p class="card-kicker">School dates</p><h2>Elementary calendar</h2></div>
+          <a class="text-button link-button" href="https://res.usd404.org/19819_1" target="_blank" rel="noopener">Open full</a>
+        </div>
+        <div class="calendar-frame-wrap">
+          <iframe title="Riverton Elementary calendar" src="https://calendar.google.com/calendar/embed?src=c_fe89ef6ff0b4235db44b98b0d3fcbdda2deb3d5f3ae311e5ed3b408c9caee805%40group.calendar.google.com&amp;ctz=America%2FChicago&amp;mode=AGENDA" loading="lazy"></iframe>
+        </div>
+      </section>
+
+      <section class="resource-card lunch-card">
+        <div class="resource-icon" aria-hidden="true">🍎</div>
+        <div><p class="card-kicker">Food service</p><h2>This week’s lunch menu</h2><p>The official USD 404 menu opens to the current school week.</p></div>
+        <a class="primary-link" href="https://menus.healthepro.com/organizations/1681" target="_blank" rel="noopener">View weekly menu</a>
+      </section>
+
+      <section class="quick-links">
+        <a href="https://www.parentsquare.com/" target="_blank" rel="noopener"><strong>ParentSquare</strong><span>District announcements ›</span></a>
+        <a href="https://rivertonks.infinitecampus.org/campus/portal/parents/riverton.jsp" target="_blank" rel="noopener"><strong>Infinite Campus</strong><span>Student information ›</span></a>
+        <a href="https://res.usd404.org/66454_2" target="_blank" rel="noopener"><strong>3rd &amp; 4th supplies</strong><span>2026–27 lists ›</span></a>
+      </section>
+    </section>
+
     <p id="notice" class="notice" role="status"></p>
-
     <footer>
-      <p id="sourceLine">NOAA / National Weather Service</p>
+      <p id="sourceLine">NOAA / National Weather Service · USD 404 links</p>
       <p id="updatedLine">Forecast only · Not a field measurement</p>
-      <p class="install-note">On iPhone: Safari Share → Add to Home Screen</p>
+      <p class="install-note">Unofficial family tool · Verify schedule changes with the team.</p>
     </footer>
   </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button id="nav-home" class="active" type="button" data-view="home"><span>⌂</span>Home</button>
+    <button id="nav-conditions" type="button" data-view="conditions"><span>☀</span>Conditions</button>
+    <button id="nav-schedule" type="button" data-view="schedule"><span>▦</span>Schedule</button>
+    <button id="nav-school" type="button" data-view="school"><span>★</span>School</button>
+  </nav>
   <script src="./app.js" defer></script>
 </body>
 </html>
