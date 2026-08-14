@@ -68,11 +68,24 @@ h1 { margin: 4px 0 0; font-size: clamp(24px, 6.5vw, 34px); letter-spacing: -.8px
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(255,255,255,.08); }
 .decision-card h2 { margin: 15px 0 8px; font-size: clamp(31px, 8vw, 52px); line-height: .98; letter-spacing: -1.6px; text-transform: uppercase; }
 .decision-card > p { max-width: 610px; margin: 0 0 17px; color: #c7d3df; font-size: 14px; line-height: 1.5; }
-.worst-block { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; padding: 12px 14px; border: 1px solid #29435c; border-radius: 14px; background: rgba(3,13,23,.7); }
-.worst-block span { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-.worst-block strong { font-size: 20px; }
-.worst-block b { grid-column: 2; grid-row: 1 / 3; font-size: 18px; }
+.zone-block { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #29435c; border-radius: 14px; background: rgba(3,13,23,.7); }
+.zone-block span { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.zone-block strong { font-size: 16px; text-align: right; }
 .skeleton-line { display: block; color: #9fb0c3; font-size: 13px; }
+
+.rule-card { margin-top: 14px; overflow: hidden; border: 1px solid #385976; border-radius: 18px; background: #0d2235; }
+.rule-card summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 72px; padding: 14px 17px; cursor: pointer; list-style: none; }
+.rule-card summary::-webkit-details-marker { display: none; }
+.rule-card summary strong { display: block; margin-top: 4px; font-size: 17px; }
+.rule-card summary > span { flex: 0 0 auto; color: var(--rams-gold); font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+.rule-card summary > span::after { content: " +"; }
+.rule-card[open] summary > span::after { content: " −"; }
+.rule-content { padding: 0 18px 17px; border-top: 1px solid var(--line); }
+.rule-content h3 { margin: 16px 0 8px; color: var(--rams-gold); font-size: 17px; }
+.rule-content ul { margin: 0; padding-left: 20px; color: #d4dfe9; }
+.rule-content li { margin: 7px 0; font-size: 13px; line-height: 1.42; }
+.rule-source { margin: 14px 0 0; color: #7f94a8; font-size: 10px; line-height: 1.4; }
+.rule-source a { color: #b9cbe0; text-underline-offset: 2px; }
 
 .section-title { display: flex; align-items: end; justify-content: space-between; padding: 27px 2px 12px; }
 .section-title h2 { margin: 4px 0 0; font-size: 22px; }

@@ -1,13 +1,13 @@
 {
-  "name": "Riverton Football Heat",
-  "short_name": "Rams Heat",
-  "description": "Official NWS WBGT forecast for Riverton football practice.",
+  "name": "Riverton Rams Practice Conditions",
+  "short_name": "Rams Conditions",
+  "description": "NWS WBGT forecast grid for Riverton football practice.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#061522",
   "theme_color": "#003d7a",
   "icons": [
-    { "src": "./assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

@@ -6,37 +6,49 @@
   <meta name="theme-color" content="#003d7a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Rams Heat">
-  <title>Riverton Football Heat</title>
-  <meta name="description" content="Official NWS WBGT forecast and KSHSAA football practice guidance for Riverton, Kansas.">
+  <meta name="apple-mobile-web-app-title" content="Rams Conditions">
+  <title>Riverton Rams Practice Conditions</title>
+  <meta name="description" content="NWS WBGT forecast grid and KSHSAA football practice guidance for Riverton, Kansas.">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./assets/icon.svg">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="app-shell">
     <header class="brand-card">
-      <img id="brandLogo" src="./assets/riverton-logo.png" alt="Riverton USD 404 Rams">
+      <img id="brandLogo" src="./riverton-logo.png" alt="Riverton USD 404 Rams">
       <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh forecast">↻</button>
     </header>
 
     <div class="location-row">
       <div>
         <p class="eyebrow">Riverton, Kansas</p>
-        <h1>Football Heat Report</h1>
+        <h1>Rams Practice Conditions</h1>
       </div>
-      <span class="official-badge">Official NWS WBGT</span>
+      <span class="official-badge">NWS Grid WBGT</span>
     </div>
 
     <section id="alertArea" class="alert-area" aria-live="polite"></section>
 
     <section id="decisionCard" class="decision-card waiting" aria-live="polite">
-      <div class="decision-kicker"><span class="status-dot"></span> Practice decision · 4–8 PM</div>
+      <div class="decision-kicker"><span class="status-dot"></span> Practice guidance · 4–8 PM</div>
       <h2 id="decisionTitle">Checking the NWS forecast</h2>
-      <p id="decisionDetail">Pulling the latest official forecast for Riverton.</p>
-      <div id="worstBlock" class="worst-block skeleton-line">Loading forecast…</div>
+      <p id="decisionDetail">Pulling the latest forecast grid for the Riverton athletic field.</p>
+      <div id="zoneBlock" class="zone-block skeleton-line">Loading forecast…</div>
     </section>
+
+    <details id="ruleCard" class="rule-card">
+      <summary>
+        <div><p class="eyebrow">Applicable KSHSAA range</p><strong id="ruleRange">Checking current range…</strong></div>
+        <span>View rules</span>
+      </summary>
+      <div class="rule-content">
+        <h3 id="ruleTitle">Practice modifications</h3>
+        <ul id="ruleList"></ul>
+        <p class="rule-source"><a href="https://www.kshsaa.org/Public/pdf/HeatInfoCurrent.pdf" target="_blank" rel="noopener">View the official KSHSAA policy</a> · Updated April 2026</p>
+      </div>
+    </details>
 
     <div class="section-title">
       <div>
@@ -60,7 +72,7 @@
     </section>
 
     <div class="actions">
-      <button id="shareButton" class="primary-button" type="button" disabled>Share report image</button>
+      <button id="shareButton" class="primary-button" type="button" disabled>Share practice card</button>
       <button id="refreshButton" class="secondary-button" type="button">Refresh forecast</button>
     </div>
     <p id="notice" class="notice" role="status"></p>
