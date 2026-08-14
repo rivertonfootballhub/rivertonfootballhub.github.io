@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#003d7a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Rams Heat">
+  <title>Riverton Football Heat</title>
+  <meta name="description" content="Official NWS WBGT forecast and KSHSAA football practice guidance for Riverton, Kansas.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="brand-card">
+      <img id="brandLogo" src="./assets/riverton-logo.png" alt="Riverton USD 404 Rams">
+      <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh forecast">↻</button>
+    </header>
+
+    <div class="location-row">
+      <div>
+        <p class="eyebrow">Riverton, Kansas</p>
+        <h1>Football Heat Report</h1>
+      </div>
+      <span class="official-badge">Official NWS WBGT</span>
+    </div>
+
+    <section id="alertArea" class="alert-area" aria-live="polite"></section>
+
+    <section id="decisionCard" class="decision-card waiting" aria-live="polite">
+      <div class="decision-kicker"><span class="status-dot"></span> Practice decision · 4–8 PM</div>
+      <h2 id="decisionTitle">Checking the NWS forecast</h2>
+      <p id="decisionDetail">Pulling the latest official forecast for Riverton.</p>
+      <div id="worstBlock" class="worst-block skeleton-line">Loading forecast…</div>
+    </section>
+
+    <div class="section-title">
+      <div>
+        <p id="dateLabel" class="eyebrow">Today · Ages 8U</p>
+        <h2>Hourly outlook</h2>
+      </div>
+      <span class="sun-pill">☀ Direct sun</span>
+    </div>
+
+    <section class="hourly-card" aria-label="Hourly WBGT forecast">
+      <div class="table-head"><span>Time</span><span>Air</span><span>Heat</span><span>WBGT</span><span>Action</span></div>
+      <div id="hourRows"></div>
+    </section>
+
+    <section class="field-note">
+      <div class="meter-icon" aria-hidden="true">°</div>
+      <div>
+        <h3>Field reading wins</h3>
+        <p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="shareButton" class="primary-button" type="button" disabled>Share report image</button>
+      <button id="refreshButton" class="secondary-button" type="button">Refresh forecast</button>
+    </div>
+    <p id="notice" class="notice" role="status"></p>
+
+    <footer>
+      <p id="sourceLine">NOAA / National Weather Service</p>
+      <p id="updatedLine">Forecast only · Not a field measurement</p>
+      <p class="install-note">On iPhone: Safari Share → Add to Home Screen</p>
+    </footer>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
