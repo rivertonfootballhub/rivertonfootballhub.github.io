@@ -44,6 +44,10 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 }
 
+function cleanAlertText(value) {
+  return String(value ?? "").replace(/(\d)([AP]M)\b/g, "$1 $2");
+}
+
 function cleanMenuText(value) {
   return String(value ?? "").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").replace(/\s{2,}/g, " ").trim();
 }
@@ -85,7 +89,7 @@ function calendarDayNumber(date = new Date()) {
 function formatGameDate(game) {
   const date = dateAt(game.date, "12:00");
   const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "short", month: "short", day: "numeric" }).format(date);
-  const time = game.time ? new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" }).format(gameStart(game)) : "Time TBD";
+  const time = game.time ? new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" }).format(gameStart(game)) : "TIME TBD";
   return { day, time };
 }
 
@@ -128,12 +132,12 @@ function renderNextEvent() {
   const event = nextTeamEvent();
   $("nextEventCard").classList.remove("loading-card");
   if (!event) {
-    $("nextEventTitle").textContent = "Season complete";
+    $("nextEventTitle").textContent = "Season Complete";
     $("nextEventMeta").textContent = "Thanks for a great season. Go Rams!";
     $("nextEventCountdown").textContent = "2026";
     return;
   }
-  $("nextEventTitle").textContent = event.type === "practice" ? "Football practice" : event.title;
+  $("nextEventTitle").textContent = event.type === "practice" ? "Football Practice" : event.title;
   if (event.type === "practice") {
     const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric" }).format(event.start);
     $("nextEventMeta").textContent = `${day} · 6–8 PM · Riverton`;
@@ -148,12 +152,12 @@ function renderDayContext() {
   const practiceToday = isPracticeDay();
   const currentLabel = state.report?.currentHour?.label || hourLabel(chicagoParts().hour);
   $("homeConditionsKicker").textContent = practiceToday ? "Today’s practice conditions" : "Today’s conditions";
-  $("homeConditionsTitle").textContent = practiceToday ? `Current WBGT · ${currentLabel}` : `No team practice today · ${currentLabel}`;
-  $("conditionsTitle").textContent = practiceToday ? "Practice conditions" : "Today’s conditions";
+  $("homeConditionsTitle").textContent = practiceToday ? `Current WBGT · ${currentLabel}` : `No Team Practice Today · ${currentLabel}`;
+  $("conditionsTitle").textContent = practiceToday ? "Practice Conditions" : "Today’s Conditions";
   $("conditionsIntro").textContent = practiceToday
     ? "Tap an hour to view its exact KSHSAA guidance."
     : "No team practice is scheduled today. The hourly forecast remains available for planning; tap any hour to review its KSHSAA range.";
-  $("fieldNoteTitle").textContent = practiceToday ? "Field reading wins" : "On practice days, the field reading wins";
+  $("fieldNoteTitle").textContent = practiceToday ? "Field Reading Wins" : "On Practice Days, the Field Reading Wins";
 }
 
 function durationMs(value) {
@@ -177,13 +181,13 @@ function valueAt(series, target) {
 }
 
 function tierFor(wbgt) {
-  if (wbgt === null) return { short: "WAITING", decision: "Forecast unavailable", detail: "No NWS WBGT grid value is available for this hour yet.", color: "#8297ad", className: "waiting", range: "Waiting for NWS data", zone: "", rules: [] };
+  if (wbgt === null) return { short: "WAITING", decision: "Forecast Unavailable", detail: "No NWS WBGT grid value is available for this hour yet.", color: "#8297ad", className: "waiting", range: "Waiting for NWS data", zone: "", rules: [] };
   const value = Math.round((Number(wbgt) + Number.EPSILON) * 10) / 10;
-  if (value >= 89.8) return { short: "CANCEL", decision: "No outdoor activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE", rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."] };
-  if (value >= 87.8) return { short: "DELAY", decision: "Delay or reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE", rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."] };
-  if (value >= 84.7) return { short: "MODIFY", decision: "Modify equipment and practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE", rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."] };
-  if (value >= 80) return { short: "CAUTION", decision: "Increase water and rest breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE", rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."] };
-  return { short: "NORMAL", decision: "Normal practice precautions", detail: "Continue scheduled hydration and rest breaks.", color: "#4acb8a", className: "normal", range: "79.9°F or lower", zone: "GREEN ZONE", rules: ["Normal activities are permitted.", "Provide at least three separate rest breaks each hour, at least 3 minutes each.", "All participants must have unrestricted access to water.", "Continue monitoring athletes for heat-illness symptoms."] };
+  if (value >= 89.8) return { short: "CANCEL", decision: "No Outdoor Activity", detail: "Delay practice until a cooler WBGT is reached.", color: "#ff4054", className: "extreme", range: "89.8°F or higher", zone: "BLACK ZONE", rules: ["No outdoor activity.", "Delay practice or competition until a cooler WBGT is reached.", "All participants must have unrestricted access to water.", "A field reading taken 30–60 minutes before activity overrides this forecast."] };
+  if (value >= 87.8) return { short: "DELAY", decision: "Delay or Reschedule", detail: "KSHSAA recommends waiting until a cooler WBGT is reached.", color: "#ff7a3d", className: "high", range: "87.8–89.7°F", zone: "RED ZONE", rules: ["Delay or reschedule until a cooler WBGT is reached.", "If activity takes place: 1 hour maximum, excluding rest breaks.", "Provide at least 20 total minutes of rest distributed throughout that hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: no protective equipment and no conditioning activities.", "All participants must have unrestricted access to water."] };
+  if (value >= 84.7) return { short: "MODIFY", decision: "Modify Equipment and Practice", detail: "Helmet and shoulder pads only; remove them for conditioning.", color: "#f4c348", className: "elevated", range: "84.7–87.7°F", zone: "ORANGE ZONE", rules: ["2 hours maximum, excluding rest breaks.", "Provide at least four separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "Football: limit equipment to helmets and shoulder pads; remove them for conditioning.", "If practice began in green or yellow and rises to orange, players may continue in full protective gear.", "All participants must have unrestricted access to water."] };
+  if (value >= 80) return { short: "CAUTION", decision: "Increase Water and Rest Breaks", detail: "Use longer scheduled breaks and have rapid cooling ready.", color: "#d9d25e", className: "caution", range: "80.0–84.6°F", zone: "YELLOW ZONE", rules: ["Provide at least three separate 4-minute rest breaks each hour.", "Have a cold-water immersion tub or other rapid-cooling method ready.", "All participants must have unrestricted access to water.", "Monitor at-risk athletes more closely."] };
+  return { short: "NORMAL", decision: "Normal Practice Precautions", detail: "Continue scheduled hydration and rest breaks.", color: "#4acb8a", className: "normal", range: "79.9°F or lower", zone: "GREEN ZONE", rules: ["Normal activities are permitted.", "Provide at least three separate rest breaks each hour, at least 3 minutes each.", "All participants must have unrestricted access to water.", "Continue monitoring athletes for heat-illness symptoms."] };
 }
 
 function formatTemp(value) { return value === null ? "—" : `${Math.round(value)}°`; }
@@ -220,7 +224,7 @@ function renderLunchMenu() {
   });
   $("lunchGradeBadge").textContent = `${state.lunchGrade}${state.lunchGrade === "3" ? "rd" : "th"}`;
   if (!data || !grade) {
-    $("lunchWeekLabel").textContent = "Menu temporarily unavailable";
+    $("lunchWeekLabel").textContent = "Menu Temporarily Unavailable";
     $("lunchWeek").innerHTML = '<p class="empty-state">The weekly menu could not be loaded. Use Official menu above to check the food-service site.</p>';
     return;
   }
@@ -278,7 +282,7 @@ function renderRows(hours) {
         <div class="hour-guidance-head"><h3>${slotLabel}: ${tier.decision}</h3><span class="hour-guidance-zone" style="color:${tier.color}">${tier.zone}<br>${tier.range}</span></div>
         <p class="hour-guidance-detail">${tier.detail}</p>
         ${tier.rules.length ? `<ul>${tier.rules.map((rule) => `<li>${rule}</li>`).join("")}</ul>` : ""}
-        <p class="rule-source"><a href="https://www.kshsaa.org/Public/pdf/HeatInfoCurrent.pdf" target="_blank" rel="noopener">View the official KSHSAA policy</a> · Updated April 2026</p>
+        <p class="rule-source"><a href="https://www.kshsaa.org/Public/pdf/HeatInfoCurrent.pdf" target="_blank" rel="noopener">View the Official KSHSAA Policy</a> · Updated April 2026</p>
       </div>
     </div>`;
   }).join("");
@@ -370,7 +374,7 @@ function renderAlerts(alerts = state.alerts) {
     const properties = feature.properties || {};
     const issued = properties.sent || properties.effective;
     const timing = formatAlertUpdate(issued);
-    return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS heat alert")}</strong><p>${escapeHtml(properties.headline || "A National Weather Service heat alert is in effect.")}</p><small>${escapeHtml(timing)}</small></div></article>`;
+    return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS heat alert")}</strong><p>${escapeHtml(cleanAlertText(properties.headline || "A National Weather Service heat alert is in effect."))}</p><small>${escapeHtml(timing)}</small></div></article>`;
   }).join("");
 }
 
@@ -413,11 +417,11 @@ async function loadPracticeForecast() {
 function renderNextGame(game) {
   state.nextGame = game;
   if (!game) {
-    $("nextGameTitle").textContent = "Season complete";
+    $("nextGameTitle").textContent = "Season Complete";
     $("nextGameBadge").textContent = "Go Rams";
     $("nextGameMeta").textContent = "The 2026 Pee Wee schedule is complete.";
     $("gameWeather").innerHTML = '<p class="empty-state">Thanks for a great season.</p>';
-    $("nextGameActions").innerHTML = '<button type="button" data-open-view="schedule">View season</button>';
+    $("nextGameActions").innerHTML = '<button type="button" data-open-view="schedule">View Season</button>';
     return;
   }
   const formatted = formatGameDate(game), venue = gameVenue(game);
@@ -425,7 +429,7 @@ function renderNextGame(game) {
   $("nextGameTitle").textContent = opponentText;
   $("nextGameBadge").textContent = game.side === "home" ? "Home" : game.side === "away" ? "Away" : "Postseason";
   $("nextGameMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
-  $("nextGameActions").innerHTML = `${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to calendar</button><button type="button" data-open-view="schedule">Full schedule</button>`;
+  $("nextGameActions").innerHTML = `${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to Calendar</button><button type="button" data-open-view="schedule">Full Schedule</button>`;
 }
 
 async function loadGameWeather(game) {
@@ -475,7 +479,7 @@ function renderSchedule() {
     const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "@" : "vs"} ${game.opponent}`;
     return `<article class="schedule-card ${side}${postseason}">
       <div class="schedule-top"><div><span class="week-label">${game.week}${game.conference ? " · Conference" : game.postseason ? " · Postseason" : ""}</span><h3>${opponentText}</h3></div><div class="schedule-date">${formatted.day}<span>${formatted.time}</span></div></div>
-      <div class="schedule-actions">${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to calendar</button></div>
+      <div class="schedule-actions">${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to Calendar</button></div>
     </article>`;
   }).join("");
 }
@@ -516,7 +520,7 @@ async function refreshHub() {
   state.loading = true; $("refreshTop").classList.add("loading"); $("refreshButton").textContent = "Refreshing…"; $("refreshButton").disabled = true; $("notice").textContent = "Refreshing conditions and game-day weather…";
   const game = nextGame(); renderNextEvent(); renderNextGame(game);
   await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game), loadLunchMenus()]);
-  state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh forecast"; $("refreshButton").disabled = false;
+  state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh Forecast"; $("refreshButton").disabled = false;
   if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
 }
 
@@ -524,7 +528,7 @@ async function forceRefreshAll() {
   const button = $("forceRefreshButton");
   if (button.disabled || state.loading) return;
   button.disabled = true;
-  button.textContent = "Checking for updates…";
+  button.textContent = "Checking for Updates…";
   $("notice").textContent = "Checking the app and every live data source…";
   try {
     const appCheck = await fetch(`./manifest.webmanifest?force=${Date.now()}`, { cache: "no-store" });
@@ -541,7 +545,7 @@ async function forceRefreshAll() {
   } catch {
     $("notice").textContent = "A full refresh could not reach the app server. Saved data was retained; try again when the connection improves.";
     button.disabled = false;
-    button.textContent = "Force refresh all data";
+    button.textContent = "Force Refresh All Data";
   }
 }
 

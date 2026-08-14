@@ -10,6 +10,7 @@ Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 - Includes a policy/source page with the April 2026 KSHSAA reference, NWS data endpoints and a source-backed venue directory verified August 14, 2026.
 - Loads the upcoming week of official USD 404 lunch choices directly in the app, with separate 3rd- and 4th-grade views and menu-source pictograms removed from item names.
 - Provides a Home-only force-refresh control that checks for an updated app shell, refreshes all live feeds and safely retains saved fallback data if the network is unavailable.
+- Uses a larger Home logo, compact team metadata and a consistent typography system: Title Case for headings/actions and all caps for labels/status/navigation.
 
 ## GitHub Pages
 
