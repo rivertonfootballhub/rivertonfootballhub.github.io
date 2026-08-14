@@ -16,14 +16,14 @@
 </head>
 <body>
   <main class="app-shell">
-    <header class="brand-card">
-      <img id="brandLogo" src="./riverton-logo.png" alt="Riverton USD 404 Rams">
-      <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh hub">
+    <header id="brandHeader" class="brand-card">
+      <img id="brandLogo" src="./riverton-logo.png" alt="Riverton Football Hub">
+      <button id="refreshTop" class="icon-button" type="button" aria-label="Refresh live data" title="Refresh live data">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5M5.7 9a7 7 0 0 1 11.6-2.6L20 9M4 15l2.7 2.6A7 7 0 0 0 18.3 15"/></svg>
       </button>
     </header>
 
-    <div class="location-row">
+    <div id="hubTitleRow" class="location-row">
       <div>
         <p class="eyebrow">Riverton Pee Wee · 2026</p>
         <h1>Riverton Football Hub</h1>
@@ -84,7 +84,7 @@
 
       <section class="field-note">
         <div class="meter-icon" aria-hidden="true">°</div>
-        <div><h3>Field reading wins</h3><p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p></div>
+        <div><h3 id="fieldNoteTitle">Field reading wins</h3><p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p></div>
       </section>
 
       <button class="policy-link-card" type="button" data-open-view="policy">
@@ -92,8 +92,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
       </button>
 
-      <div class="actions">
-        <button id="shareButton" class="primary-button" type="button" disabled>Share practice card</button>
+      <div class="actions single-action">
         <button id="refreshButton" class="secondary-button" type="button">Refresh forecast</button>
       </div>
     </section>
@@ -137,7 +136,7 @@
 
     <section id="view-policy" class="app-view policy-view" hidden>
       <div class="page-heading">
-        <div><p class="eyebrow">Riverton Football Hub · v2.0</p><h2>Safety policy &amp; sources</h2></div>
+        <div><p class="eyebrow">Safety documentation · v2.1</p><h2>Safety policy &amp; sources</h2></div>
         <button class="compact-button" type="button" data-open-view="conditions">Back</button>
       </div>
       <p class="page-intro">Source review completed August 14, 2026. Links below open the source used to verify each item.</p>
@@ -196,7 +195,8 @@
     <footer>
       <p id="sourceLine"><button class="footer-source-button" type="button" data-open-view="policy">View policy, sources &amp; venue verification</button></p>
       <p id="updatedLine">Forecast only · Not a field measurement</p>
-      <p class="install-note">Unofficial family tool · Verify schedule changes with the team.</p>
+      <p id="footerNote" class="install-note">Forecast only · Not a field measurement.</p>
+      <button id="forceRefreshButton" class="footer-force-button" type="button">Force refresh all data</button>
     </footer>
   </main>
 

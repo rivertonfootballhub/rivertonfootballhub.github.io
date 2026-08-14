@@ -9,7 +9,7 @@ const CONFIG = {
   practiceEnd: 20,
   practiceDays: ["Mon", "Tue", "Thu"],
   practiceSeasonEnd: "2026-11-12",
-  cacheKey: "riverton-football-hub-v2-0"
+  cacheKey: "riverton-football-hub-v2-1"
 };
 
 const VENUES = {
@@ -44,6 +44,10 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 }
 
+function cleanMenuText(value) {
+  return String(value ?? "").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").replace(/\s{2,}/g, " ").trim();
+}
+
 function chicagoParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(date);
   const get = (type) => parts.find((part) => part.type === type)?.value || "";
@@ -53,6 +57,7 @@ function chicagoParts(date = new Date()) {
 function localDateKey(parts = chicagoParts()) { return `${parts.year}-${parts.month}-${parts.day}`; }
 function localDateLabel(date = new Date()) { return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(date); }
 function partsForKey(key) { const [year, month, day] = key.split("-"); return { year, month, day, hour: 12 }; }
+function hourLabel(hour) { const normalized = ((Number(hour) % 24) + 24) % 24; return `${normalized % 12 || 12} ${normalized < 12 ? "AM" : "PM"}`; }
 
 function chicagoOffset(parts) {
   const probe = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), 18));
@@ -141,13 +146,14 @@ function renderNextEvent() {
 
 function renderDayContext() {
   const practiceToday = isPracticeDay();
+  const currentLabel = state.report?.currentHour?.label || hourLabel(chicagoParts().hour);
   $("homeConditionsKicker").textContent = practiceToday ? "Today’s practice conditions" : "Today’s conditions";
-  $("homeConditionsTitle").textContent = practiceToday ? "Practice window · 6–8 PM" : "No team practice today · 4–8 PM";
+  $("homeConditionsTitle").textContent = practiceToday ? `Current WBGT · ${currentLabel}` : `No team practice today · ${currentLabel}`;
   $("conditionsTitle").textContent = practiceToday ? "Practice conditions" : "Today’s conditions";
   $("conditionsIntro").textContent = practiceToday
     ? "Tap an hour to view its exact KSHSAA guidance."
     : "No team practice is scheduled today. The hourly forecast remains available for planning; tap any hour to review its KSHSAA range.";
-  $("shareButton").textContent = practiceToday ? "Share practice card" : "Share conditions card";
+  $("fieldNoteTitle").textContent = practiceToday ? "Field reading wins" : "On practice days, the field reading wins";
 }
 
 function durationMs(value) {
@@ -221,9 +227,9 @@ function renderLunchMenu() {
   $("lunchWeekLabel").textContent = `${lunchDateLabel(data.weekStart, { month: "short", day: "numeric" })}–${lunchDateLabel(data.weekEnd, { month: "short", day: "numeric" })}`;
   $("lunchWeek").innerHTML = grade.days.map((day) => {
     const date = lunchDateLabel(day.date, { weekday: "short", month: "short", day: "numeric" });
-    if (day.closed) return `<article class="lunch-day closed"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>${escapeHtml(day.description || "No school")}</h4></div></article>`;
+    if (day.closed) return `<article class="lunch-day closed"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>${escapeHtml(cleanMenuText(day.description || "No school"))}</h4></div></article>`;
     if (!day.entrees?.length && !day.sides?.length) return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>Menu not published yet</h4></div></article>`;
-    return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div class="lunch-meal"><h4>${day.entrees.map(escapeHtml).join(" · ")}</h4>${day.sides.length ? `<p><b>With:</b> ${day.sides.map(escapeHtml).join(" · ")}</p>` : ""}</div></article>`;
+    return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div class="lunch-meal"><h4>${day.entrees.map((item) => escapeHtml(cleanMenuText(item))).join(" · ")}</h4>${day.sides.length ? `<p><b>With:</b> ${day.sides.map((item) => escapeHtml(cleanMenuText(item))).join(" · ")}</p>` : ""}</div></article>`;
   }).join("");
 }
 
@@ -238,13 +244,19 @@ async function loadLunchMenus() {
   }
   $("lunchCacheWarning").hidden = !state.lunchFromCache;
   renderLunchMenu();
+  updateFooter();
 }
 
 function buildHours(properties, parts) {
   return CONFIG.hours.map((hour) => {
     const target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
-    return { hour, label: `${hour - 12} PM`, temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
+    return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
   });
+}
+
+function buildCurrentHour(properties, parts) {
+  const hour = parts.hour, target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
+  return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
 }
 
 function readCache(dateKey) {
@@ -273,12 +285,10 @@ function renderRows(hours) {
 }
 
 function renderHomeConditions(report) {
-  const hours = report?.hours?.filter((hour) => !isPracticeDay() || (hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd)) || [];
-  if (!hours.some((hour) => hour.wbgt !== null)) { $("homeConditions").innerHTML = `<p class="empty-state">${isPracticeDay() ? "Practice-hour" : "Hourly"} WBGT values are not available yet. Open Conditions for the latest status.</p>`; return; }
-  $("homeConditions").innerHTML = hours.map((hour) => {
-    const tier = tierFor(hour.wbgt);
-    return `<button class="mini-condition" type="button" data-hour-jump="${hour.hour}"><strong>${hour.label}</strong><b style="color:${tier.color}">${formatWbgt(hour.wbgt)}</b><span style="color:${tier.color}">${tier.short} · View rules</span></button>`;
-  }).join("");
+  const hour = report?.currentHour;
+  if (!hour || hour.wbgt === null) { $("homeConditions").innerHTML = '<p class="empty-state">The current-hour NWS WBGT value is not available yet. Open Conditions for the 4–8 PM outlook.</p>'; return; }
+  const tier = tierFor(hour.wbgt);
+  $("homeConditions").innerHTML = `<div class="current-wbgt"><div><strong>${escapeHtml(hour.label)}</strong><span>Direct-sun NWS grid</span></div><b style="color:${tier.color}">${formatWbgt(hour.wbgt)}</b><em style="color:${tier.color}">${escapeHtml(tier.short)}</em></div>`;
 }
 
 function formatSourceTime(value) {
@@ -286,6 +296,11 @@ function formatSourceTime(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "Unavailable";
   return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
+}
+
+function formatAlertUpdate(value) {
+  const formatted = formatSourceTime(value);
+  return formatted === "Unavailable" ? "NWS update time unavailable" : `NWS updated ${formatted.replace(", ", " at ")}`;
 }
 
 function relativeAge(value) {
@@ -315,6 +330,32 @@ function updateFreshnessUI() {
   if (showWarning) $("freshnessWarningText").textContent = `The NWS request failed. This forecast was retrieved ${relativeAge(retrievedAt)}. Do not use saved data for a practice decision—refresh or use the on-field meter.`;
 }
 
+function menuGeneratedLabel(value) {
+  if (!value || !Number.isFinite(new Date(value).getTime())) return "time unavailable";
+  return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function updateFooter() {
+  const retrievedAt = state.report?.retrievedAt || state.report?.updatedAt;
+  if (state.activeView === "schedule") {
+    $("updatedLine").textContent = "Verify schedule changes with coaches.";
+    $("footerNote").textContent = "Times and locations can change.";
+    return;
+  }
+  if (state.activeView === "school") {
+    $("updatedLine").textContent = `Menu generated ${menuGeneratedLabel(state.lunchData?.generatedAt)} · Confirm changes with Health-e Pro`;
+    $("footerNote").textContent = "Use the official menu for nutrition and allergen details.";
+    return;
+  }
+  if (state.activeView === "policy") {
+    $("updatedLine").textContent = "Policy and venue sources reviewed August 14, 2026.";
+    $("footerNote").textContent = "Forecast plans. The on-field WBGT meter decides.";
+    return;
+  }
+  $("updatedLine").textContent = state.report ? `${state.reportFromCache ? "Saved NWS forecast" : "Live NWS forecast"} · Retrieved ${relativeAge(retrievedAt)}` : "Checking the live NWS forecast…";
+  $("footerNote").textContent = "Forecast only · Not a field measurement.";
+}
+
 function renderAlerts(alerts = state.alerts) {
   state.alerts = alerts || [];
   const visible = state.activeView === "home" || state.activeView === "conditions";
@@ -328,7 +369,7 @@ function renderAlerts(alerts = state.alerts) {
   $("alertArea").innerHTML = heatAlerts.map((feature) => {
     const properties = feature.properties || {};
     const issued = properties.sent || properties.effective;
-    const timing = `${issued ? `Issued ${formatSourceTime(issued)}` : "Issue time unavailable"}${properties.expires ? ` · Expires ${formatSourceTime(properties.expires)}` : ""}`;
+    const timing = formatAlertUpdate(issued);
     return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS heat alert")}</strong><p>${escapeHtml(properties.headline || "A National Weather Service heat alert is in effect.")}</p><small>${escapeHtml(timing)}</small></div></article>`;
   }).join("");
 }
@@ -336,16 +377,12 @@ function renderAlerts(alerts = state.alerts) {
 function renderReport(report, fromCache = false) {
   state.report = report;
   state.reportFromCache = fromCache;
-  const validHours = report.hours.filter((hour) => hour.wbgt !== null);
   $("dateLabel").textContent = `${report.dateLabel} · ${isPracticeDay() ? "Practice 6–8 PM" : "No scheduled practice"} · Ages 8U`;
   renderDayContext();
-  $("shareButton").disabled = validHours.length === 0 || fromCache;
-  $("shareButton").title = fromCache ? "Refresh live NWS data before sharing" : "";
-  if (fromCache) $("shareButton").textContent = "Refresh before sharing";
   renderRows(report.hours);
   renderHomeConditions(report);
   updateFreshnessUI();
-  $("updatedLine").textContent = `${fromCache ? "Saved forecast" : "Live NWS forecast"} · Retrieved ${relativeAge(report.retrievedAt || report.updatedAt)} · Not a field measurement`;
+  updateFooter();
 }
 
 async function loadPracticeForecast() {
@@ -359,15 +396,15 @@ async function loadPracticeForecast() {
     if (gridResult.status !== "fulfilled") throw gridResult.reason;
     const properties = gridResult.value.properties || {};
     const retrievedAt = new Date().toISOString();
-    const report = { dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: properties.updateTime || properties.updated || null, updatedAt: retrievedAt, hours: buildHours(properties, parts) };
+    const report = { dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: properties.updateTime || properties.updated || null, updatedAt: retrievedAt, currentHour: buildCurrentHour(properties, parts), hours: buildHours(properties, parts) };
     if (report.hours.some((hour) => hour.wbgt !== null)) saveCache(report);
     renderReport(report);
   } catch (error) {
     if (cached) { renderReport(cached, true); $("notice").textContent = "Showing the last saved practice forecast because the NWS feed did not respond."; }
     else {
-      const empty = CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null }));
+      const empty = CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null }));
       const retrievedAt = new Date().toISOString();
-      renderReport({ dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: null, updatedAt: retrievedAt, hours: empty });
+      renderReport({ dateKey, dateLabel: localDateLabel(), retrievedAt, issuedAt: null, updatedAt: retrievedAt, currentHour: { hour: parts.hour, label: hourLabel(parts.hour), temperature: null, heatIndex: null, wbgt: null }, hours: empty });
       $("notice").textContent = error?.name === "AbortError" ? "The NWS request timed out. Tap refresh to try again." : "The NWS feed did not respond. Tap refresh to try again.";
     }
   }
@@ -465,60 +502,13 @@ function switchView(view) {
   state.activeView = view;
   document.querySelectorAll(".app-view").forEach((section) => { const active = section.id === `view-${view}`; section.hidden = !active; section.classList.toggle("active", active); });
   document.querySelectorAll(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  $("brandHeader").hidden = view !== "home";
+  $("hubTitleRow").hidden = view !== "home";
+  $("forceRefreshButton").hidden = view !== "home";
   renderAlerts();
   updateFreshnessUI();
+  updateFooter();
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  let line = "";
-  for (const word of text.split(" ")) {
-    const test = `${line}${word} `;
-    if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line, x, y); line = `${word} `; y += lineHeight; }
-    else line = test;
-  }
-  ctx.fillText(line, x, y); return y;
-}
-
-async function shareReport() {
-  if (!state.report?.hours.some((hour) => hour.wbgt !== null)) return;
-  const canvas = document.createElement("canvas"), scale = 2;
-  canvas.width = 1080 * scale; canvas.height = 1500 * scale;
-  const ctx = canvas.getContext("2d"); ctx.scale(scale, scale);
-  ctx.fillStyle = "#061522"; ctx.fillRect(0, 0, 1080, 1500);
-  ctx.fillStyle = "#003d7a"; ctx.fillRect(0, 0, 1080, 170);
-  ctx.fillStyle = "#d7cf69"; ctx.font = "900 39px Arial"; ctx.fillText("RIVERTON RAMS", 60, 72);
-  const practiceToday = isPracticeDay();
-  ctx.fillStyle = "#ffffff"; ctx.font = "900 51px Arial"; ctx.fillText(practiceToday ? "PRACTICE CONDITIONS" : "TODAY’S CONDITIONS", 60, 133);
-  ctx.fillStyle = "#d7cf69"; ctx.fillRect(0, 170, 18, 190);
-  ctx.fillStyle = "#122b43"; ctx.fillRect(18, 170, 1062, 190);
-  ctx.fillStyle = "#a9bbca"; ctx.font = "800 25px Arial"; ctx.fillText(practiceToday ? "PRACTICE WINDOW" : "HOURLY OUTLOOK", 64, 226);
-  ctx.fillStyle = "#ffffff"; ctx.font = "900 58px Arial"; ctx.fillText(practiceToday ? "6–8 PM" : "4–8 PM", 64, 300);
-  ctx.fillStyle = "#d7cf69"; ctx.font = "700 24px Arial"; ctx.fillText("Hourly KSHSAA guidance", 300, 298);
-  const xs = [62, 270, 465, 680, 850];
-  ctx.fillStyle = "#7f94aa"; ctx.font = "800 22px Arial"; ["TIME", "AIR", "HEAT", "WBGT", "GUIDANCE"].forEach((label, index) => ctx.fillText(label, xs[index], 425));
-  state.report.hours.forEach((hour, index) => {
-    const y = 503 + index * 108, rowTier = tierFor(hour.wbgt);
-    ctx.strokeStyle = "#223c55"; ctx.beginPath(); ctx.moveTo(58, y + 34); ctx.lineTo(1022, y + 34); ctx.stroke();
-    ctx.fillStyle = "#ffffff"; ctx.font = "800 32px Arial"; ctx.fillText(hour.label, xs[0], y); ctx.font = "600 32px Arial"; ctx.fillText(formatTemp(hour.temperature), xs[1], y); ctx.fillText(formatTemp(hour.heatIndex), xs[2], y);
-    ctx.fillStyle = rowTier.color; ctx.font = "900 36px Arial"; ctx.fillText(formatWbgt(hour.wbgt), xs[3], y); ctx.font = "900 24px Arial"; ctx.fillText(rowTier.short, xs[4], y);
-  });
-  const practiceHours = state.report.hours.filter((hour) => hour.hour >= CONFIG.practiceStart && hour.hour < CONFIG.practiceEnd);
-  ctx.fillStyle = "#112a41"; ctx.fillRect(48, 1055, 984, 350);
-  ctx.fillStyle = "#d7cf69"; ctx.font = "900 25px Arial"; ctx.fillText(`${practiceToday ? "6–8 PM" : "HOURLY"} KSHSAA GUIDANCE`, 76, 1100);
-  practiceHours.forEach((hour, index) => {
-    const rowTier = tierFor(hour.wbgt), y = 1160 + index * 104;
-    ctx.fillStyle = rowTier.color; ctx.font = "900 26px Arial"; ctx.fillText(`${hour.label} · ${rowTier.short}`, 76, y);
-    ctx.fillStyle = "#e4edf5"; ctx.font = "500 21px Arial"; wrapText(ctx, rowTier.detail, 250, y, 730, 27);
-  });
-  ctx.fillStyle = "#8195a9"; ctx.font = "500 17px Arial"; ctx.fillText("Field WBGT reading 30–60 minutes before practice overrides this forecast.", 60, 1460);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) return;
-  const file = new File([blob], "riverton-rams-conditions.png", { type: "image/png" });
-  try {
-    if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "Riverton Rams Practice Conditions", files: [file] });
-    else { const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = file.name; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); $("notice").textContent = "Practice card downloaded."; }
-  } catch (error) { if (error?.name !== "AbortError") $("notice").textContent = "The image could not be shared. Try again."; }
 }
 
 async function refreshHub() {
@@ -530,9 +520,34 @@ async function refreshHub() {
   if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
 }
 
+async function forceRefreshAll() {
+  const button = $("forceRefreshButton");
+  if (button.disabled || state.loading) return;
+  button.disabled = true;
+  button.textContent = "Checking for updates…";
+  $("notice").textContent = "Checking the app and every live data source…";
+  try {
+    const appCheck = await fetch(`./manifest.webmanifest?force=${Date.now()}`, { cache: "no-store" });
+    if (!appCheck.ok || appCheck.headers.get("X-Riverton-Cache") === "saved") throw new Error("App host unavailable");
+    const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    if (registration) await registration.update();
+    await refreshHub();
+    const incomplete = state.reportFromCache || state.lunchFromCache || state.alertsAvailable === false || !state.lunchData;
+    $("notice").textContent = incomplete ? "Reloading the app. One or more live sources remain unavailable, so saved-data warnings will stay visible." : "All live data refreshed. Reloading the latest app version…";
+    button.textContent = "Reloading…";
+    const url = new URL(window.location.href);
+    url.searchParams.set("refresh", String(Date.now()));
+    window.setTimeout(() => window.location.replace(url.toString()), 350);
+  } catch {
+    $("notice").textContent = "A full refresh could not reach the app server. Saved data was retained; try again when the connection improves.";
+    button.disabled = false;
+    button.textContent = "Force refresh all data";
+  }
+}
+
 $("refreshTop").addEventListener("click", refreshHub);
 $("refreshButton").addEventListener("click", refreshHub);
-$("shareButton").addEventListener("click", shareReport);
+$("forceRefreshButton").addEventListener("click", forceRefreshAll);
 $("addSeasonButton").addEventListener("click", () => downloadCalendar(GAMES, "riverton-pee-wee-2026.ics"));
 
 document.addEventListener("click", (event) => {
@@ -550,7 +565,7 @@ $("hourRows").addEventListener("click", (event) => {
   const button = event.target.closest(".hour-row");
   if (!button) return;
   const hour = Number(button.dataset.hour); state.selectedHour = state.selectedHour === hour ? null : hour;
-  renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: `${item - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
+  renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: hourLabel(item), temperature: null, heatIndex: null, wbgt: null })));
   if (state.selectedHour !== null) document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
 
@@ -559,7 +574,7 @@ renderVenueVerificationList();
 renderNextEvent();
 renderDayContext();
 renderNextGame(nextGame());
-renderRows(CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
+renderRows(CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null })));
 renderLunchMenu();
 refreshHub();
 

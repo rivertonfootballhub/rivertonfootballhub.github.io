@@ -1,4 +1,4 @@
-const CACHE = "riverton-football-hub-v2-0";
+const CACHE = "riverton-football-hub-v2-1-refresh";
 const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./lunch-menu.json", "./manifest.webmanifest", "./icon-512.png", "./apple-touch-icon.png", "./riverton-logo.png"];
 
 self.addEventListener("install", (event) => {

@@ -14,7 +14,7 @@ html { background: var(--background); }
 body {
   margin: 0;
   color: var(--ink);
-  background: radial-gradient(circle at 90% -5%, rgba(13,87,152,.45), transparent 28rem), linear-gradient(180deg, #061522, #07111b 70%);
+  background: radial-gradient(ellipse at 88% 0%, rgba(13,87,152,.22) 0, rgba(13,87,152,.08) 23rem, transparent 42rem), linear-gradient(180deg, #071827 0, #061522 42%, #07111b 100%);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 button, a { font: inherit; }
@@ -22,9 +22,10 @@ button { color: inherit; }
 a { color: inherit; }
 .app-shell { width: min(100%, 760px); min-height: 100svh; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 16px calc(112px + env(safe-area-inset-bottom)); }
 
-.brand-card { display: flex; align-items: center; min-height: 70px; padding: 9px 12px; border-radius: 18px; background: #fff; box-shadow: 0 14px 36px rgba(0,0,0,.3); }
-.brand-card img { display: block; width: min(78%, 420px); height: auto; }
-.icon-button { width: 46px; height: 46px; display: grid; place-items: center; margin-left: auto; border: 1px solid #d7e0e7; border-radius: 50%; color: var(--rams-blue); background: #eef4f8; cursor: pointer; }
+.brand-card { display: flex; align-items: center; min-height: 72px; padding: 10px 12px; border: 1px solid #31516e; border-radius: 18px; background: linear-gradient(145deg, rgba(16,42,65,.96), rgba(7,24,39,.96)); box-shadow: 0 14px 36px rgba(0,0,0,.24); }
+.brand-card[hidden], .location-row[hidden] { display: none; }
+.brand-card img { display: block; width: min(79%, 440px); height: 70px; object-fit: contain; object-position: left center; }
+.icon-button { width: 46px; height: 46px; display: grid; place-items: center; margin-left: auto; border: 1px solid #42617e; border-radius: 50%; color: var(--rams-gold); background: #0b2033; cursor: pointer; }
 .icon-button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button.loading { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -73,11 +74,16 @@ h1 { margin: 4px 0 0; font-size: clamp(25px, 6.5vw, 35px); letter-spacing: -.9px
 .text-button, .compact-button { border: 1px solid #42617e; border-radius: 99px; padding: 8px 11px; color: var(--rams-gold); background: #10263a; font-size: 10px; font-weight: 900; text-decoration: none; text-transform: uppercase; cursor: pointer; }
 .link-button { display: inline-flex; align-items: center; }
 
-.mini-condition-list { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
+.mini-condition-list { display: grid; gap: 9px; margin-top: 14px; }
 .mini-condition { padding: 13px; border: 1px solid #29455f; border-radius: 15px; background: #081a29; }
 .mini-condition strong { display: block; font-size: 18px; }
 .mini-condition b { display: block; margin-top: 5px; font-size: 28px; line-height: 1; }
 .mini-condition span { display: block; margin-top: 5px; font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.current-wbgt { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 13px; padding: 15px 16px; border: 1px solid #29455f; border-radius: 16px; background: #081a29; }
+.current-wbgt strong { display: block; font-size: 19px; }
+.current-wbgt span { display: block; margin-top: 4px; color: #8297ad; font-size: 9px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.current-wbgt b { font-size: clamp(31px, 9vw, 42px); line-height: 1; }
+.current-wbgt em { font-size: 10px; font-style: normal; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
 .home-freshness { margin: 11px 0 0; color: #7f94a8; font-size: 9px; line-height: 1.4; }
 .empty-state { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
 
@@ -138,6 +144,7 @@ h1 { margin: 4px 0 0; font-size: clamp(25px, 6.5vw, 35px); letter-spacing: -.9px
 .policy-link-card strong { display: block; margin-top: 4px; font-size: 13px; line-height: 1.35; }
 .policy-link-card svg { width: 20px; height: 20px; fill: none; stroke: var(--rams-gold); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .actions { display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; margin-top: 15px; }
+.actions.single-action { grid-template-columns: 1fr; }
 .actions button { min-height: 51px; border-radius: 14px; font-weight: 900; cursor: pointer; }
 .primary-button { border: 0; color: #06213d; background: var(--rams-gold); }
 .secondary-button { border: 1px solid #42617e; color: #eaf2f9; background: #10263a; }
@@ -206,6 +213,9 @@ footer { margin-top: 17px; padding: 16px 2px 0; border-top: 1px solid var(--line
 footer p { margin: 3px 0; }
 .install-note { color: #aab9c8; }
 .footer-source-button { margin: 0; padding: 0; border: 0; color: #aebfd0; background: transparent; font-size: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.footer-force-button { min-height: 40px; margin-top: 11px; padding: 0 13px; border: 1px solid #42617e; border-radius: 12px; color: var(--rams-gold); background: #0d2235; font-size: 10px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; }
+.footer-force-button[hidden] { display: none; }
+.footer-force-button:disabled { cursor: wait; opacity: .6; }
 
 .bottom-nav { position: fixed; z-index: 20; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(calc(100% - 24px), 720px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 7px; border: 1px solid rgba(83,112,139,.75); border-radius: 22px; background: rgba(8,24,38,.94); box-shadow: 0 16px 45px rgba(0,0,0,.5); backdrop-filter: blur(18px); }
 .bottom-nav button { min-height: 55px; display: grid; place-items: center; gap: 2px; border: 0; border-radius: 15px; color: #8196aa; background: transparent; font-size: 9px; font-weight: 850; text-transform: uppercase; cursor: pointer; }

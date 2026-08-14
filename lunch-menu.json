@@ -1,7 +1,7 @@
 {
   "source": "Health-e Pro / Riverton USD 404",
   "sourceUrl": "https://menus.healthepro.com/organizations/1681",
-  "generatedAt": "2026-08-14T11:45:15.892Z",
+  "generatedAt": "2026-08-14T04:38:27.456Z",
   "weekStart": "2026-08-17",
   "weekEnd": "2026-08-21",
   "menus": {
@@ -14,9 +14,9 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Scrambled Eggs w. French Toast Sticks and Bacon🐖",
+            "Scrambled Eggs w. French Toast Sticks and Bacon",
             "Corn Dog",
-            "Chicken Bacon Ranch Salad🐖"
+            "Chicken Bacon Ranch Salad"
           ],
           "sides": [
             "Cornbread",
@@ -38,7 +38,7 @@
           "sides": [
             "Fruit Muffin",
             "Fresh Garden Salad",
-            "Cowboy Beans 🐄",
+            "Cowboy Beans",
             "Fresh Fruit",
             "Chilled Fruit"
           ]
@@ -49,8 +49,8 @@
           "description": "",
           "entrees": [
             "Chicken Patty",
-            "Grilled Ham & Cheese Sandwich🐖",
-            "Watermelon Salad 🐖"
+            "Grilled Ham & Cheese Sandwich",
+            "Watermelon Salad"
           ],
           "sides": [
             "Hot Roll",
@@ -65,9 +65,9 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Cheeseburger🐄",
+            "Cheeseburger",
             "Rattlesnake Pasta",
-            "BLTE Salad🐖"
+            "BLTE Salad"
           ],
           "sides": [
             "Italian Bread",
@@ -82,7 +82,7 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Mini Meatball Pizza 🐖",
+            "Mini Meatball Pizza",
             "Hot Dog",
             "Caesar Salad"
           ],
@@ -105,10 +105,10 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Scrambled Eggs w. French Toast Sticks and Bacon🐖",
+            "Scrambled Eggs w. French Toast Sticks and Bacon",
             "Corn Dog",
             "Garden Fresh Salad Bar",
-            "Sub Bar 🐖",
+            "Sub Bar",
             "Pizza Bar"
           ],
           "sides": [
@@ -127,13 +127,13 @@
             "Chicken Nachos w. White Queso",
             "Tenders w. Garlic Toast",
             "Garden Fresh Salad Bar",
-            "Sub Bar 🐖",
+            "Sub Bar",
             "Pizza Bar"
           ],
           "sides": [
             "Fruit Muffin",
             "Fresh Garden Salad",
-            "Cowboy Beans 🐄",
+            "Cowboy Beans",
             "Fresh Fruit",
             "Chilled Fruit"
           ]
@@ -144,9 +144,9 @@
           "description": "",
           "entrees": [
             "Chicken Patty",
-            "Grilled Ham & Cheese Sandwich🐖",
+            "Grilled Ham & Cheese Sandwich",
             "Garden Fresh Salad Bar",
-            "Sub Bar 🐖",
+            "Sub Bar",
             "Pizza Bar"
           ],
           "sides": [
@@ -162,10 +162,10 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Cheeseburger🐄",
+            "Cheeseburger",
             "Rattlesnake Pasta",
             "Garden Fresh Salad Bar",
-            "Sub Bar 🐖",
+            "Sub Bar",
             "Pizza Bar"
           ],
           "sides": [
@@ -181,10 +181,10 @@
           "closed": false,
           "description": "",
           "entrees": [
-            "Mini Meatball Pizza 🐖",
+            "Mini Meatball Pizza",
             "Hot Dog",
             "Garden Fresh Salad Bar",
-            "Sub Bar 🐖"
+            "Sub Bar"
           ],
           "sides": [
             "Focaccia Bread",
