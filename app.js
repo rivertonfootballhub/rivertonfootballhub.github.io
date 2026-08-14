@@ -9,7 +9,7 @@ const CONFIG = {
   practiceEnd: 20,
   practiceDays: ["Mon", "Tue", "Thu"],
   practiceSeasonEnd: "2026-11-12",
-  cacheKey: "riverton-football-hub-v4"
+  cacheKey: "riverton-football-hub-v5"
 };
 
 const VENUES = {
@@ -37,7 +37,7 @@ const GAMES = [
   { id: "wk10", week: "Week 10", date: "2026-11-14", time: null, opponent: "Super Bowl", side: "tbd", venue: "commerce", postseason: true }
 ];
 
-const state = { report: null, loading: false, selectedHour: null, activeView: "home", nextGame: null };
+const state = { report: null, loading: false, selectedHour: null, activeView: "home", nextGame: null, lunchGrade: "3", lunchData: null };
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(value) {
@@ -166,6 +166,50 @@ async function fetchJson(url, timeout = 12000) {
     if (!response.ok) throw new Error(`NWS returned ${response.status}`);
     return await response.json();
   } finally { clearTimeout(timer); }
+}
+
+async function fetchLocalJson(url, timeout = 12000) {
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error(`Menu data returned ${response.status}`);
+    return await response.json();
+  } finally { clearTimeout(timer); }
+}
+
+function lunchDateLabel(dateKey, options = {}) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...options }).format(new Date(`${dateKey}T12:00:00Z`));
+}
+
+function renderLunchMenu() {
+  const data = state.lunchData, grade = data?.menus?.[state.lunchGrade];
+  document.querySelectorAll("[data-lunch-grade]").forEach((button) => {
+    const active = button.dataset.lunchGrade === state.lunchGrade;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  $("lunchGradeBadge").textContent = `${state.lunchGrade}${state.lunchGrade === "3" ? "rd" : "th"}`;
+  if (!data || !grade) {
+    $("lunchWeekLabel").textContent = "Menu temporarily unavailable";
+    $("lunchWeek").innerHTML = '<p class="empty-state">The weekly menu could not be loaded. Use Official menu above to check the food-service site.</p>';
+    return;
+  }
+  $("lunchWeekLabel").textContent = `${lunchDateLabel(data.weekStart, { month: "short", day: "numeric" })}–${lunchDateLabel(data.weekEnd, { month: "short", day: "numeric" })}`;
+  $("lunchWeek").innerHTML = grade.days.map((day) => {
+    const date = lunchDateLabel(day.date, { weekday: "short", month: "short", day: "numeric" });
+    if (day.closed) return `<article class="lunch-day closed"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>${escapeHtml(day.description || "No school")}</h4></div></article>`;
+    if (!day.entrees?.length && !day.sides?.length) return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>Menu not published yet</h4></div></article>`;
+    return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div class="lunch-meal"><h4>${day.entrees.map(escapeHtml).join(" · ")}</h4>${day.sides.length ? `<p><b>With:</b> ${day.sides.map(escapeHtml).join(" · ")}</p>` : ""}</div></article>`;
+  }).join("");
+}
+
+async function loadLunchMenus() {
+  try {
+    state.lunchData = await fetchLocalJson("./lunch-menu.json", 9000);
+  } catch {
+    state.lunchData = null;
+  }
+  renderLunchMenu();
 }
 
 function buildHours(properties, parts) {
@@ -383,7 +427,7 @@ async function refreshHub() {
   if (state.loading) return;
   state.loading = true; $("refreshTop").classList.add("loading"); $("refreshButton").textContent = "Refreshing…"; $("refreshButton").disabled = true; $("notice").textContent = "Refreshing conditions and game-day weather…";
   const game = nextGame(); renderNextEvent(); renderNextGame(game);
-  await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game)]);
+  await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game), loadLunchMenus()]);
   state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh forecast"; $("refreshButton").disabled = false;
   if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
 }
@@ -400,6 +444,8 @@ document.addEventListener("click", (event) => {
   if (calendarButton) { const game = GAMES.find((item) => item.id === calendarButton.dataset.calendarGame); if (game) downloadCalendar([game], `riverton-${game.id}.ics`); return; }
   const hourJump = event.target.closest("[data-hour-jump]");
   if (hourJump) { state.selectedHour = Number(hourJump.dataset.hourJump); switchView("conditions"); renderRows(state.report?.hours || []); setTimeout(() => document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 220); }
+  const gradeButton = event.target.closest("[data-lunch-grade]");
+  if (gradeButton) { state.lunchGrade = gradeButton.dataset.lunchGrade; renderLunchMenu(); }
 });
 
 $("hourRows").addEventListener("click", (event) => {
@@ -414,6 +460,7 @@ renderSchedule();
 renderNextEvent();
 renderNextGame(nextGame());
 renderRows(CONFIG.hours.map((hour) => ({ hour, label: `${hour - 12} PM`, temperature: null, heatIndex: null, wbgt: null })));
+renderLunchMenu();
 refreshHub();
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));

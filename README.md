@@ -6,12 +6,12 @@ Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 - Shows NWS game-day weather when the next game enters the forecast window.
 - Provides the full schedule, Apple Maps directions and downloadable calendar events.
 - Reads the NWS WBGT forecast grid for the Riverton athletic field and opens the exact KSHSAA rules for each hour.
-- Links the official Riverton Elementary calendar, weekly USD 404 lunch menu, ParentSquare, Infinite Campus and grade-level supply lists.
+- Loads the upcoming week of official USD 404 lunch choices directly in the app, with separate 3rd- and 4th-grade views.
 - Creates a branded PNG practice card through the device share sheet.
 
 ## GitHub Pages
 
-Publish every file in this package from the repository root on the `main` branch. No build step is required.
+Publish every file in this package from the repository root on the `main` branch. The included GitHub workflow refreshes `lunch-menu.json` from the official food-service system each morning.
 
 ## Schedule assumptions
 

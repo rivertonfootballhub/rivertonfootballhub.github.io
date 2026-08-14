@@ -126,17 +126,24 @@ h1 { margin: 4px 0 0; font-size: clamp(25px, 6.5vw, 35px); letter-spacing: -.9px
 .schedule-date span { display: block; margin-top: 3px; color: var(--rams-gold); }
 .schedule-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
 
-.resource-card:first-of-type { margin-top: 14px; }
-.calendar-frame-wrap { overflow: hidden; height: 430px; margin-top: 14px; border: 1px solid #31516e; border-radius: 15px; background: #fff; }
-.calendar-frame-wrap iframe { width: 100%; height: 100%; border: 0; }
-.lunch-card { display: grid; grid-template-columns: auto 1fr; gap: 13px; align-items: start; }
-.resource-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: #142f48; font-size: 25px; }
-.lunch-card p:not(.card-kicker) { margin: 7px 0 0; color: #b9c8d5; font-size: 13px; line-height: 1.45; }
-.primary-link { grid-column: 1 / -1; min-height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: #09223a; background: var(--rams-gold); font-weight: 900; text-decoration: none; }
-.quick-links { display: grid; gap: 9px; margin-top: 14px; }
-.quick-links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; border: 1px solid #31516e; border-radius: 15px; background: #0d2235; text-decoration: none; }
-.quick-links strong { font-size: 14px; }
-.quick-links span { color: #91a5b9; font-size: 11px; text-align: right; }
+.grade-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding: 5px; border: 1px solid #31516e; border-radius: 16px; background: #081a29; }
+.grade-switch button { min-height: 44px; border: 0; border-radius: 12px; color: #8fa3b7; background: transparent; font-size: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+.grade-switch button.active { color: #09223a; background: var(--rams-gold); }
+.lunch-week-card { overflow: hidden; margin-top: 14px; border: 1px solid #31516e; border-radius: 20px; background: #0d2235; }
+.lunch-week-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px; background: #142a40; }
+.lunch-week-heading h3 { margin: 4px 0 0; font-size: 20px; }
+.lunch-days { display: grid; }
+.lunch-day { display: grid; grid-template-columns: 78px 1fr; gap: 13px; min-height: 100px; padding: 16px; border-top: 1px solid #28445f; }
+.lunch-day:first-child { border-top: 0; }
+.lunch-date { align-self: start; }
+.lunch-date strong { display: block; color: var(--rams-gold); font-size: 18px; text-transform: uppercase; }
+.lunch-date span { display: block; margin-top: 4px; color: #8fa3b7; font-size: 11px; }
+.lunch-day h4 { margin: 0; font-size: 14px; line-height: 1.45; }
+.lunch-day h4 span { color: #8196aa; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.lunch-day p { margin: 8px 0 0; color: #9fb0c3; font-size: 11px; line-height: 1.5; }
+.lunch-day p b { color: #d5e0e9; }
+.lunch-day.closed h4 { color: #9fb0c3; }
+.menu-note { margin: 13px 3px 0; color: #7f94a8; font-size: 10px; line-height: 1.5; }
 
 .notice { min-height: 18px; margin: 10px 0 0; color: #b7c7d7; text-align: center; font-size: 12px; }
 footer { margin-top: 17px; padding: 16px 2px 0; border-top: 1px solid var(--line); color: #768ba0; font-size: 11px; line-height: 1.4; }
@@ -160,6 +167,6 @@ footer p { margin: 3px 0; }
   .table-head, .hour-row { padding-inline: 9px; }
   .hour-row span { font-size: 14px; }
   .actions { grid-template-columns: 1fr; }
-  .calendar-frame-wrap { height: 390px; }
+  .lunch-day { grid-template-columns: 66px 1fr; padding-inline: 13px; }
 }
 @media (prefers-reduced-motion: reduce) { .icon-button.loading { animation: none; } .app-view { animation: none; } }

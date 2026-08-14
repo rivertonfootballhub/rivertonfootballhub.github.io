@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Football Hub">
   <title>Riverton Football Hub</title>
-  <meta name="description" content="Riverton Pee Wee football schedule, game-day weather, practice WBGT guidance and elementary family resources.">
+  <meta name="description" content="Riverton Pee Wee football schedule, game-day weather, practice WBGT guidance and weekly 3rd and 4th grade lunch menus.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -92,35 +92,30 @@
 
     <section id="view-school" class="app-view" aria-labelledby="nav-school" hidden>
       <div class="page-heading">
-        <div><p class="eyebrow">Riverton Elementary</p><h2>Family resources</h2></div>
+        <div><p class="eyebrow">Riverton K-12 · Food service</p><h2>Upcoming lunch menus</h2></div>
+        <a class="compact-button link-button" href="https://menus.healthepro.com/organizations/1681" target="_blank" rel="noopener">Official menu</a>
+      </div>
+      <p class="page-intro">Choose a grade to see the next school week without leaving the football hub.</p>
+
+      <div class="grade-switch" role="group" aria-label="Lunch menu grade">
+        <button class="active" type="button" data-lunch-grade="3" aria-pressed="true">3rd grade</button>
+        <button type="button" data-lunch-grade="4" aria-pressed="false">4th grade</button>
       </div>
 
-      <section class="resource-card">
-        <div class="card-heading">
-          <div><p class="card-kicker">School dates</p><h2>Elementary calendar</h2></div>
-          <a class="text-button link-button" href="https://res.usd404.org/19819_1" target="_blank" rel="noopener">Open full</a>
+      <section class="lunch-week-card" aria-live="polite">
+        <div class="lunch-week-heading">
+          <div><p class="card-kicker">Next school week</p><h3 id="lunchWeekLabel">Loading menu…</h3></div>
+          <span id="lunchGradeBadge" class="game-badge">3rd</span>
         </div>
-        <div class="calendar-frame-wrap">
-          <iframe title="Riverton Elementary calendar" src="https://calendar.google.com/calendar/embed?src=c_fe89ef6ff0b4235db44b98b0d3fcbdda2deb3d5f3ae311e5ed3b408c9caee805%40group.calendar.google.com&amp;ctz=America%2FChicago&amp;mode=AGENDA" loading="lazy"></iframe>
-        </div>
+        <div id="lunchWeek" class="lunch-days"><p class="empty-state">Loading the official Riverton menu…</p></div>
       </section>
 
-      <section class="resource-card lunch-card">
-        <div class="resource-icon" aria-hidden="true">🍎</div>
-        <div><p class="card-kicker">Food service</p><h2>This week’s lunch menu</h2><p>The official USD 404 menu opens to the current school week.</p></div>
-        <a class="primary-link" href="https://menus.healthepro.com/organizations/1681" target="_blank" rel="noopener">View weekly menu</a>
-      </section>
-
-      <section class="quick-links">
-        <a href="https://www.parentsquare.com/" target="_blank" rel="noopener"><strong>ParentSquare</strong><span>District announcements ›</span></a>
-        <a href="https://rivertonks.infinitecampus.org/campus/portal/parents/riverton.jsp" target="_blank" rel="noopener"><strong>Infinite Campus</strong><span>Student information ›</span></a>
-        <a href="https://res.usd404.org/66454_2" target="_blank" rel="noopener"><strong>3rd &amp; 4th supplies</strong><span>2026–27 lists ›</span></a>
-      </section>
+      <p class="menu-note">Menus refresh automatically from the official USD 404 food-service system. Choices can change; check the official menu for nutrition and allergen details.</p>
     </section>
 
     <p id="notice" class="notice" role="status"></p>
     <footer>
-      <p id="sourceLine">NOAA / National Weather Service · USD 404 links</p>
+      <p id="sourceLine">NOAA / National Weather Service · USD 404 food service</p>
       <p id="updatedLine">Forecast only · Not a field measurement</p>
       <p class="install-note">Unofficial family tool · Verify schedule changes with the team.</p>
     </footer>
@@ -130,7 +125,7 @@
     <button id="nav-home" class="active" type="button" data-view="home"><span>⌂</span>Home</button>
     <button id="nav-conditions" type="button" data-view="conditions"><span>☀</span>Conditions</button>
     <button id="nav-schedule" type="button" data-view="schedule"><span>▦</span>Schedule</button>
-    <button id="nav-school" type="button" data-view="school"><span>★</span>School</button>
+    <button id="nav-school" type="button" data-view="school"><span>●</span>Lunch</button>
   </nav>
   <script src="./app.js" defer></script>
 </body>
