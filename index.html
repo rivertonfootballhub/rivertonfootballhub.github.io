@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Football Hub">
   <title>Riverton Football Hub</title>
-  <meta name="description" content="Riverton Pee Wee football schedule, game-day weather and practice WBGT guidance.">
+  <meta name="description" content="Riverton Pee Wee football schedule, game-day weather and WBGT safety guidance.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-512.png" type="image/png">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -30,15 +30,15 @@
     <section id="alertArea" class="alert-area" aria-live="polite"></section>
     <section id="freshnessWarning" class="freshness-warning" role="alert" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg>
-      <div><strong>Saved weather data</strong><p id="freshnessWarningText">Refresh before making a practice decision.</p></div>
+      <div><strong>Saved weather data</strong><p id="freshnessWarningText">Refresh before making an activity decision.</p></div>
     </section>
 
     <section id="view-home" class="app-view active" aria-labelledby="nav-home">
       <section id="nextEventCard" class="hero-card loading-card" aria-live="polite">
         <p class="card-kicker">Next event</p>
         <h2 id="nextEventTitle">Checking the Calendar…</h2>
-        <p id="nextEventMeta">Practice is Monday, Tuesday and Thursday from 6–8 PM.</p>
-        <small id="nextEventSource" class="event-source-note">Manually maintained schedule · Confirm changes with coaches</small>
+        <p id="nextEventMeta">Checking the 2026 game schedule.</p>
+        <small id="nextEventSource" class="event-source-note">Team schedule · Confirm changes with the team</small>
         <div id="nextEventCountdown" class="countdown-pill">Loading</div>
       </section>
 
@@ -81,7 +81,7 @@
 
       <section class="field-note">
         <div class="meter-icon" aria-hidden="true">°</div>
-        <div><h3 id="fieldNoteTitle">Field Reading Wins</h3><p>Take an on-field WBGT reading in direct sun 30–60 minutes before practice. Average readings for 15–20 minutes. That result overrides this forecast.</p></div>
+        <div><h3 id="fieldNoteTitle">Field Reading Wins</h3><p>Take an on-field WBGT reading in direct sun 30–60 minutes before outdoor activity. Average readings for 15–20 minutes. That result overrides this forecast.</p></div>
       </section>
 
       <button class="policy-link-card" type="button" data-open-view="policy">
@@ -99,13 +99,13 @@
         <div><p class="eyebrow">2026 Pee Wee</p><h2>Season Schedule</h2></div>
         <button id="addSeasonButton" class="compact-button" type="button">Add Season</button>
       </div>
-      <p class="page-intro">Dates and opponents come from the team flyer. A 6 PM kickoff marked * is an unconfirmed assumption; other times are TBD. Confirm changes with coaches.</p>
+      <p class="page-intro">Dates and opponents come from the team flyer. A 6 PM kickoff marked * is an unconfirmed assumption; other times are TBD. Confirm changes with the team.</p>
       <div id="scheduleRows" class="schedule-list"></div>
     </section>
 
     <section id="view-policy" class="app-view policy-view" hidden>
       <div class="page-heading">
-        <div><p class="eyebrow">Safety documentation · v2.3</p><h2>Safety Policy &amp; Sources</h2></div>
+        <div><p class="eyebrow">Safety documentation · v2.5</p><h2>Safety Policy &amp; Sources</h2></div>
         <button class="compact-button" type="button" data-open-view="conditions">Back</button>
       </div>
       <p class="page-intro">Source review completed August 18, 2026. Links below open the source used to verify each item.</p>
@@ -152,8 +152,7 @@
       <section class="source-card">
         <p class="card-kicker">Other app data</p>
         <ul class="source-list compact">
-          <li><strong>2026 Pee Wee Schedule Flyer</strong><span>Dates/opponents supplied by the team; 6 PM assumptions are labeled and schedule changes must be confirmed with coaches.</span></li>
-          <li><strong>Practice Schedule</strong><span>Monday, Tuesday and Thursday, 6–8 PM through November 12, is manually maintained and will not automatically reflect cancellations or season changes.</span></li>
+          <li><strong>2026 Pee Wee Schedule Flyer</strong><span>Dates/opponents supplied by the team; 6 PM assumptions are labeled and schedule changes must be confirmed with the team.</span></li>
           <li><a href="https://maps.apple.com/" target="_blank" rel="noopener">Apple Maps</a><span>Directions are generated from the verified destination addresses listed above.</span></li>
           <li><a href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a><span>Hosts the app. The on-device service worker can retain app files for offline use.</span></li>
         </ul>

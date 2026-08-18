@@ -1,8 +1,8 @@
-# Riverton Football Hub · v2.3
+# Riverton Football Hub · v2.5
 
 Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
-- Calculates the next team event from the manually maintained Monday, Tuesday and Thursday 6–8 PM practice plan plus the 2026 Pee Wee game schedule.
+- Calculates the next game from the 2026 Pee Wee schedule.
 - Shows NWS game-day weather when the next game enters the forecast window.
 - Provides the full schedule, Apple Maps directions and downloadable calendar events.
 - Shows the actual current-clock-hour NWS WBGT on Home, then provides the full 4–8 PM outlook with WBGT to one decimal place and the exact KSHSAA rules for each hour on Conditions.
@@ -20,8 +20,6 @@ Publish every file in this package from the repository root on the `main` branch
 
 Dates and opponents come from the team flyer. The 6 PM times shown for Weeks 1–7 are assumptions and are visibly marked with an asterisk; their calendar events are tentative. October 31, playoffs and the Super Bowl remain TBD. Verify every change with the team.
 
-The Monday, Tuesday and Thursday 6–8 PM practice plan through November 12 is manually maintained. It will not automatically reflect cancellations or season changes; confirm with coaches.
-
 ## Weather source strategy
 
-The app uses NOAA/National Weather Service forecast grids for planning. The NWS La Crosse WBGT page is linked as an experimental educational cross-check and is not averaged into app values. Forecast values are not field measurements. An on-field WBGT reading in direct sun 30–60 minutes before practice overrides the forecast.
+The app uses NOAA/National Weather Service forecast grids for planning. Riverton conditions use the verified Riverton field grid. Game-day weather uses the stored latitude and longitude of the verified game venue when the game enters the NWS forecast window. The NWS La Crosse WBGT page is linked as an experimental educational cross-check and is not averaged into app values. Forecast values are not field measurements. An on-field WBGT reading in direct sun 30–60 minutes before outdoor activity overrides the forecast.
