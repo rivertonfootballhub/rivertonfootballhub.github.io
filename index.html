@@ -35,11 +35,13 @@
 
     <section id="view-home" class="app-view active" aria-labelledby="nav-home">
       <section id="nextEventCard" class="hero-card loading-card" aria-live="polite">
-        <p class="card-kicker">Next event</p>
+        <div class="hero-game-head"><p class="card-kicker">Next game</p><span id="nextGameBadge" class="game-badge">2026</span></div>
         <h2 id="nextEventTitle">Checking the Calendar…</h2>
         <p id="nextEventMeta">Checking the 2026 game schedule.</p>
         <small id="nextEventSource" class="event-source-note">Team schedule · Confirm changes with the team</small>
         <div id="nextEventCountdown" class="countdown-pill">Loading</div>
+        <div id="gameWeather" class="game-weather"><p class="empty-state">Checking forecast availability…</p></div>
+        <div id="nextGameActions" class="inline-actions"></div>
       </section>
 
       <section class="dashboard-card">
@@ -51,15 +53,6 @@
         <p id="homeFreshness" class="home-freshness">Checking NWS grid update time…</p>
       </section>
 
-      <section id="nextGameCard" class="dashboard-card next-game-card" aria-live="polite">
-        <div class="card-heading">
-          <div><p class="card-kicker">Next game</p><h2 id="nextGameTitle">Loading Schedule…</h2></div>
-          <span id="nextGameBadge" class="game-badge">2026</span>
-        </div>
-        <p id="nextGameMeta" class="game-meta"></p>
-        <div id="gameWeather" class="game-weather"><p class="empty-state">Checking forecast availability…</p></div>
-        <div id="nextGameActions" class="inline-actions"></div>
-      </section>
     </section>
 
     <section id="view-conditions" class="app-view" aria-labelledby="nav-conditions" hidden>
@@ -105,7 +98,7 @@
 
     <section id="view-policy" class="app-view policy-view" hidden>
       <div class="page-heading">
-        <div><p class="eyebrow">Safety documentation · v2.5</p><h2>Safety Policy &amp; Sources</h2></div>
+        <div><p class="eyebrow">Safety documentation · v2.6</p><h2>Safety Policy &amp; Sources</h2></div>
         <button class="compact-button" type="button" data-open-view="conditions">Back</button>
       </div>
       <p class="page-intro">Source review completed August 18, 2026. Links below open the source used to verify each item.</p>
@@ -160,11 +153,14 @@
     </section>
 
     <p id="notice" class="notice" role="status"></p>
+    <section class="app-version-card" aria-labelledby="appVersionTitle">
+      <div><p class="card-kicker">App version</p><h3 id="appVersionTitle"><span id="appVersionLabel">v2.6</span> · <span id="appVersionStatus">Checking…</span></h3><p id="appVersionDetail">Checking the published app version.</p></div>
+      <div class="version-actions"><button id="checkUpdateButton" type="button">Check Again</button><button id="reloadAppButton" type="button">Reload App</button></div>
+    </section>
     <footer>
       <p id="sourceLine"><button class="footer-source-button" type="button" data-open-view="policy">View Policy, Sources &amp; Venue Verification</button></p>
       <p id="updatedLine">Forecast only · Not a field measurement</p>
       <p id="footerNote" class="install-note">Forecast only · Not a field measurement.</p>
-      <button id="forceRefreshButton" class="footer-force-button" type="button">Force Refresh All Data</button>
     </footer>
   </main>
 

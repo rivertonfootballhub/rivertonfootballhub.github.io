@@ -3,9 +3,11 @@
 const CONFIG = {
   gridUrl: "https://api.weather.gov/gridpoints/SGF/17,28",
   alertsUrl: "https://api.weather.gov/alerts/active?point=37.071827,-94.704617",
+  appVersion: "2.6",
+  versionUrl: "./version.json",
   timeZone: "America/Chicago",
   hours: [16, 17, 18, 19, 20],
-  cacheKey: "riverton-football-hub-v2-5"
+  cacheKey: "riverton-football-hub-v2-6"
 };
 
 const VENUES = {
@@ -82,36 +84,15 @@ function formatGameDate(game) {
 
 function nextGame(now = new Date()) { return GAMES.find((game) => gameEnd(game) > now) || null; }
 
-function nextTeamEvent(now = new Date()) {
-  const game = nextGame(now);
-  return game ? { title: game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "at" : "vs"} ${game.opponent}`, start: gameStart(game), end: gameEnd(game), game } : null;
-}
-
-function relativeEventText(event, now = new Date()) {
-  if (!event) return "Season complete";
-  if (event.start <= now && event.end > now) return "Game day";
-  const eventKey = localDateKey(chicagoParts(event.start)), todayKey = localDateKey(chicagoParts(now));
+function gameCountdownText(game, now = new Date()) {
+  if (!game) return "Season complete";
+  const start = gameStart(game), end = gameEnd(game);
+  if (start <= now && end > now) return "Game day";
+  const eventKey = localDateKey(chicagoParts(start)), todayKey = localDateKey(chicagoParts(now));
   if (eventKey === todayKey) return "Today";
-  const days = calendarDayNumber(event.start) - calendarDayNumber(now);
+  const days = calendarDayNumber(start) - calendarDayNumber(now);
   if (days === 1) return "Tomorrow";
   return `${days} days away`;
-}
-
-function renderNextEvent() {
-  const event = nextTeamEvent();
-  $("nextEventCard").classList.remove("loading-card");
-  if (!event) {
-    $("nextEventTitle").textContent = "Season Complete";
-    $("nextEventMeta").textContent = "Thanks for a great season. Go Rams!";
-    $("nextEventCountdown").textContent = "2026";
-    $("nextEventSource").textContent = "Team schedule · Confirm changes with the team";
-    return;
-  }
-  $("nextEventSource").textContent = "Team schedule · Confirm changes with the team";
-  $("nextEventTitle").textContent = event.title;
-  const formatted = formatGameDate(event.game), venue = gameVenue(event.game);
-  $("nextEventMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
-  $("nextEventCountdown").textContent = relativeEventText(event);
 }
 
 function renderDayContext() {
@@ -319,19 +300,23 @@ async function loadForecast() {
 
 function renderNextGame(game) {
   state.nextGame = game;
+  $("nextEventCard").classList.remove("loading-card");
+  $("nextEventSource").textContent = "Team schedule · Confirm changes with the team";
   if (!game) {
-    $("nextGameTitle").textContent = "Season Complete";
+    $("nextEventTitle").textContent = "Season Complete";
     $("nextGameBadge").textContent = "Go Rams";
-    $("nextGameMeta").textContent = "The 2026 Pee Wee schedule is complete.";
+    $("nextEventMeta").textContent = "The 2026 Pee Wee schedule is complete.";
+    $("nextEventCountdown").textContent = "Season complete";
     $("gameWeather").innerHTML = '<p class="empty-state">Thanks for a great season.</p>';
     $("nextGameActions").innerHTML = '<button type="button" data-open-view="schedule">View Season</button>';
     return;
   }
   const formatted = formatGameDate(game), venue = gameVenue(game);
-  const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "@" : "vs"} ${game.opponent}`;
-  $("nextGameTitle").textContent = opponentText;
+  const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "at" : "vs"} ${game.opponent}`;
+  $("nextEventTitle").textContent = opponentText;
   $("nextGameBadge").textContent = game.side === "home" ? "Home" : game.side === "away" ? "Away" : "Postseason";
-  $("nextGameMeta").textContent = `${formatted.day} · ${formatted.time}${game.timeAssumed ? " · Time unconfirmed" : ""}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
+  $("nextEventMeta").textContent = `${formatted.day} · ${formatted.time}${game.timeAssumed ? " · Time unconfirmed" : ""}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
+  $("nextEventCountdown").textContent = gameCountdownText(game);
   $("nextGameActions").innerHTML = `${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to Calendar</button><button type="button" data-open-view="schedule">Full Schedule</button>`;
 }
 
@@ -415,7 +400,6 @@ function switchView(view) {
   document.querySelectorAll(".bottom-nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
   $("brandHeader").hidden = view !== "home";
   $("hubTitleRow").hidden = view !== "home";
-  $("forceRefreshButton").hidden = view !== "home";
   renderAlerts();
   updateFreshnessUI();
   updateFooter();
@@ -425,40 +409,67 @@ function switchView(view) {
 async function refreshHub() {
   if (state.loading) return;
   state.loading = true; $("refreshTop").classList.add("loading"); $("refreshButton").textContent = "Refreshing…"; $("refreshButton").disabled = true; $("notice").textContent = "Refreshing conditions and game-day weather…";
-  const game = nextGame(); renderNextEvent(); renderNextGame(game);
+  const game = nextGame(); renderNextGame(game);
   await Promise.allSettled([loadForecast(), loadGameWeather(game)]);
   state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh Forecast"; $("refreshButton").disabled = false;
   if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
 }
 
-async function forceRefreshAll() {
-  const button = $("forceRefreshButton");
-  if (button.disabled || state.loading) return;
-  button.disabled = true;
-  button.textContent = "Checking for Updates…";
-  $("notice").textContent = "Checking the app and every live data source…";
-  try {
-    const appCheck = await fetch(`./manifest.webmanifest?force=${Date.now()}`, { cache: "no-store" });
-    if (!appCheck.ok || appCheck.headers.get("X-Riverton-Cache") === "saved") throw new Error("App host unavailable");
-    const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
-    if (registration) await registration.update();
-    await refreshHub();
-    const incomplete = state.reportFromCache || state.alertsAvailable === false || state.gameWeatherAvailable === false || !state.report;
-    $("notice").textContent = incomplete ? "Reloading the app. One or more live sources remain unavailable, so saved-data warnings will stay visible." : "All live data refreshed. Reloading the latest app version…";
-    button.textContent = "Reloading…";
-    const url = new URL(window.location.href);
-    url.searchParams.set("refresh", String(Date.now()));
-    window.setTimeout(() => window.location.replace(url.toString()), 350);
-  } catch {
-    $("notice").textContent = "A full refresh could not reach the app server. Saved data was retained; try again when the connection improves.";
-    button.disabled = false;
-    button.textContent = "Force Refresh All Data";
+function compareVersions(left, right) {
+  const normalize = (value) => String(value || "0").split(".").map((part) => Number(part) || 0);
+  const a = normalize(left), b = normalize(right), length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index += 1) {
+    if ((a[index] || 0) > (b[index] || 0)) return 1;
+    if ((a[index] || 0) < (b[index] || 0)) return -1;
   }
+  return 0;
+}
+
+function setVersionStatus(status, detail, updateAvailable = false) {
+  $("appVersionLabel").textContent = `v${CONFIG.appVersion}`;
+  $("appVersionStatus").textContent = status;
+  $("appVersionStatus").dataset.state = updateAvailable ? "update" : status === "Current" ? "current" : "neutral";
+  $("appVersionDetail").textContent = detail;
+  $("checkUpdateButton").textContent = updateAvailable ? "Install Update" : "Check Again";
+  $("checkUpdateButton").dataset.updateAvailable = String(updateAvailable);
+}
+
+async function checkForAppUpdate() {
+  const button = $("checkUpdateButton");
+  button.disabled = true;
+  setVersionStatus("Checking…", "Checking the published app version.");
+  try {
+    const response = await fetch(`${CONFIG.versionUrl}?check=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok || response.headers.get("X-Riverton-Cache") === "saved") throw new Error("Published version unavailable");
+    const payload = await response.json();
+    if (!/^\d+\.\d+(?:\.\d+)?$/.test(String(payload.version || ""))) throw new Error("Invalid version response");
+    const updateAvailable = compareVersions(payload.version, CONFIG.appVersion) > 0;
+    setVersionStatus(updateAvailable ? "Update available" : "Current", updateAvailable ? `Version v${payload.version} is published and ready to install.` : `You are running the latest published version, v${CONFIG.appVersion}.`, updateAvailable);
+  } catch {
+    setVersionStatus("Check unavailable", "The published version could not be reached. The installed app remains usable.");
+  } finally { button.disabled = false; }
+}
+
+async function reloadApp() {
+  const buttons = [$("checkUpdateButton"), $("reloadAppButton")];
+  buttons.forEach((button) => { button.disabled = true; });
+  setVersionStatus("Reloading…", "Checking the service worker and loading fresh app files.");
+  const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration().catch(() => null) : null;
+  if (registration) await registration.update().catch(() => {});
+  const url = new URL(window.location.href);
+  url.searchParams.set("refresh", String(Date.now()));
+  window.setTimeout(() => window.location.replace(url.toString()), 250);
+}
+
+function handleUpdateCheck() {
+  if ($("checkUpdateButton").dataset.updateAvailable === "true") reloadApp();
+  else checkForAppUpdate();
 }
 
 $("refreshTop").addEventListener("click", refreshHub);
 $("refreshButton").addEventListener("click", refreshHub);
-$("forceRefreshButton").addEventListener("click", forceRefreshAll);
+$("checkUpdateButton").addEventListener("click", handleUpdateCheck);
+$("reloadAppButton").addEventListener("click", reloadApp);
 $("addSeasonButton").addEventListener("click", () => downloadCalendar(GAMES, "riverton-pee-wee-2026.ics"));
 
 document.addEventListener("click", (event) => {
@@ -480,10 +491,10 @@ $("hourRows").addEventListener("click", (event) => {
 
 renderSchedule();
 renderVenueVerificationList();
-renderNextEvent();
 renderDayContext();
 renderNextGame(nextGame());
 renderRows(CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null })));
+checkForAppUpdate();
 refreshHub();
 
 setInterval(updateFreshnessUI, 60000);

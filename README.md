@@ -1,4 +1,4 @@
-# Riverton Football Hub · v2.5
+# Riverton Football Hub · v2.6
 
 Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
@@ -11,6 +11,8 @@ Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 - Includes a policy/source page with the April 2026 KSHSAA reference, NWS data endpoints and a source-backed venue directory verified August 18, 2026.
 - Provides a Home-only force-refresh control that checks for an updated app shell, refreshes all live weather feeds and safely retains saved fallback data if the network is unavailable.
 - Uses a larger Home logo, compact team metadata and a consistent typography system: Title Case for headings/actions and all caps for labels/status/navigation.
+- Combines the next-game summary, countdown, forecast availability and actions into one Home card.
+- Shows the installed app version, checks the published `version.json`, identifies an available update and provides an explicit reload control.
 
 ## GitHub Pages
 

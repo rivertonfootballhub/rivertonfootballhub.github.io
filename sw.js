@@ -1,5 +1,5 @@
-const CACHE = "riverton-football-hub-v2-5";
-const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icon-512.png", "./apple-touch-icon.png", "./riverton-logo.png"];
+const CACHE = "riverton-football-hub-v2-6";
+const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./version.json", "./manifest.webmanifest", "./icon-512.png", "./apple-touch-icon.png", "./riverton-logo.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
