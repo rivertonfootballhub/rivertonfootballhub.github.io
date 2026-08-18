@@ -3,11 +3,11 @@
 const CONFIG = {
   gridUrl: "https://api.weather.gov/gridpoints/SGF/17,28",
   alertsUrl: "https://api.weather.gov/alerts/active?point=37.071827,-94.704617",
-  appVersion: "2.6",
+  appVersion: "2.6.1",
   versionUrl: "./version.json",
   timeZone: "America/Chicago",
   hours: [16, 17, 18, 19, 20],
-  cacheKey: "riverton-football-hub-v2-6"
+  cacheKey: "riverton-football-hub-v2-6-1"
 };
 
 const VENUES = {
@@ -466,37 +466,53 @@ function handleUpdateCheck() {
   else checkForAppUpdate();
 }
 
-$("refreshTop").addEventListener("click", refreshHub);
-$("refreshButton").addEventListener("click", refreshHub);
-$("checkUpdateButton").addEventListener("click", handleUpdateCheck);
-$("reloadAppButton").addEventListener("click", reloadApp);
-$("addSeasonButton").addEventListener("click", () => downloadCalendar(GAMES, "riverton-pee-wee-2026.ics"));
+function initializeApp() {
+  const requiredIds = ["refreshTop", "refreshButton", "checkUpdateButton", "reloadAppButton", "addSeasonButton", "hourRows", "scheduleRows", "venueVerificationList", "nextEventTitle", "gameWeather"];
+  const missingIds = requiredIds.filter((id) => !$(id));
+  if (missingIds.length) throw new Error(`App shell mismatch: ${missingIds.join(", ")}`);
 
-document.addEventListener("click", (event) => {
-  const viewButton = event.target.closest("[data-view], [data-open-view]");
-  if (viewButton) { switchView(viewButton.dataset.view || viewButton.dataset.openView); return; }
-  const calendarButton = event.target.closest("[data-calendar-game]");
-  if (calendarButton) { const game = GAMES.find((item) => item.id === calendarButton.dataset.calendarGame); if (game) downloadCalendar([game], `riverton-${game.id}.ics`); return; }
-  const hourJump = event.target.closest("[data-hour-jump]");
-  if (hourJump) { state.selectedHour = Number(hourJump.dataset.hourJump); switchView("conditions"); renderRows(state.report?.hours || []); setTimeout(() => document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 220); }
-});
+  $("refreshTop").addEventListener("click", refreshHub);
+  $("refreshButton").addEventListener("click", refreshHub);
+  $("checkUpdateButton").addEventListener("click", handleUpdateCheck);
+  $("reloadAppButton").addEventListener("click", reloadApp);
+  $("addSeasonButton").addEventListener("click", () => downloadCalendar(GAMES, "riverton-pee-wee-2026.ics"));
 
-$("hourRows").addEventListener("click", (event) => {
-  const button = event.target.closest(".hour-row");
-  if (!button) return;
-  const hour = Number(button.dataset.hour); state.selectedHour = state.selectedHour === hour ? null : hour;
-  renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: hourLabel(item), temperature: null, heatIndex: null, wbgt: null })));
-  if (state.selectedHour !== null) document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-});
+  document.addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-view], [data-open-view]");
+    if (viewButton) { switchView(viewButton.dataset.view || viewButton.dataset.openView); return; }
+    const calendarButton = event.target.closest("[data-calendar-game]");
+    if (calendarButton) { const game = GAMES.find((item) => item.id === calendarButton.dataset.calendarGame); if (game) downloadCalendar([game], `riverton-${game.id}.ics`); return; }
+    const hourJump = event.target.closest("[data-hour-jump]");
+    if (hourJump) { state.selectedHour = Number(hourJump.dataset.hourJump); switchView("conditions"); renderRows(state.report?.hours || []); setTimeout(() => document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 220); }
+  });
 
-renderSchedule();
-renderVenueVerificationList();
-renderDayContext();
-renderNextGame(nextGame());
-renderRows(CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null })));
-checkForAppUpdate();
-refreshHub();
+  $("hourRows").addEventListener("click", (event) => {
+    const button = event.target.closest(".hour-row");
+    if (!button) return;
+    const hour = Number(button.dataset.hour); state.selectedHour = state.selectedHour === hour ? null : hour;
+    renderRows(state.report?.hours || CONFIG.hours.map((item) => ({ hour: item, label: hourLabel(item), temperature: null, heatIndex: null, wbgt: null })));
+    if (state.selectedHour !== null) document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
 
-setInterval(updateFreshnessUI, 60000);
+  renderSchedule();
+  renderVenueVerificationList();
+  renderDayContext();
+  renderNextGame(nextGame());
+  renderRows(CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null })));
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  window.__RIVERTON_APP_READY__ = true;
+  window.RivertonRecovery?.hide();
+
+  checkForAppUpdate();
+  refreshHub();
+  setInterval(updateFreshnessUI, 60000);
+
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=2.6.1").catch(() => {}));
+}
+
+try {
+  initializeApp();
+} catch (error) {
+  console.error("Riverton Football Hub could not start.", error);
+  window.RivertonRecovery?.show();
+}

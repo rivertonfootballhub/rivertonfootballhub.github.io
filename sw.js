@@ -1,5 +1,5 @@
-const CACHE = "riverton-football-hub-v2-6";
-const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./version.json", "./manifest.webmanifest", "./icon-512.png", "./apple-touch-icon.png", "./riverton-logo.png"];
+const CACHE = "riverton-football-hub-v2-6-1";
+const APP_SHELL = ["./", "./index.html", "./styles.css?v=2.6.1", "./app.js?v=2.6.1", "./manifest.webmanifest?v=2.6.1", "./icon-512.png", "./apple-touch-icon.png", "./riverton-logo.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -11,11 +11,29 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET" || event.request.url.includes("api.weather.gov")) return;
-  event.respondWith(fetch(event.request).then((response) => { const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy)); return response; }).catch(async () => {
-    const saved = await caches.match(event.request);
-    if (!saved) throw new Error("No saved response");
-    const headers = new Headers(saved.headers);
-    headers.set("X-Riverton-Cache", "saved");
-    return new Response(await saved.blob(), { status: saved.status, statusText: saved.statusText, headers });
-  }));
+  const url = new URL(event.request.url);
+
+  if (url.pathname.endsWith("/version.json")) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request).then(async (response) => {
+      if (response.ok) {
+        const cache = await caches.open(CACHE);
+        await cache.put("./index.html", response.clone());
+      }
+      return response;
+    }).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  event.respondWith(caches.match(event.request).then((saved) => saved || fetch(event.request).then(async (response) => {
+    if (response.ok && url.origin === self.location.origin) {
+      const cache = await caches.open(CACHE);
+      await cache.put(event.request, response.clone());
+    }
+    return response;
+  })));
 });

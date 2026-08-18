@@ -1,4 +1,4 @@
-# Riverton Football Hub · v2.6
+# Riverton Football Hub · v2.6.1
 
 Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
@@ -9,10 +9,14 @@ Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 - Shows the NWS grid update time and app retrieval time, and places a prominent warning over every saved/cached weather forecast.
 - Shows every active NWS hazard returned for the Riverton point. Missing heat-index and rain values display as an em dash; the app does not replace them with another field or zero.
 - Includes a policy/source page with the April 2026 KSHSAA reference, NWS data endpoints and a source-backed venue directory verified August 18, 2026.
-- Provides a Home-only force-refresh control that checks for an updated app shell, refreshes all live weather feeds and safely retains saved fallback data if the network is unavailable.
+- Uses versioned app files and an independent startup-recovery notice to prevent an older cached script from being paired with a newer page.
 - Uses a larger Home logo, compact team metadata and a consistent typography system: Title Case for headings/actions and all caps for labels/status/navigation.
 - Combines the next-game summary, countdown, forecast availability and actions into one Home card.
 - Shows the installed app version, checks the published `version.json`, identifies an available update and provides an explicit reload control.
+
+## v2.6.1 cache-recovery fix
+
+This release gives each app script, stylesheet and manifest URL a version identifier. An older service worker therefore cannot substitute a previous release's JavaScript into the current page. Startup also validates the page shell and shows a reload notice if required elements are unavailable.
 
 ## GitHub Pages
 
