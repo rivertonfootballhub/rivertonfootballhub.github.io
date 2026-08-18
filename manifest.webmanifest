@@ -1,7 +1,7 @@
 {
   "name": "Riverton Football Hub",
   "short_name": "Football Hub",
-  "description": "Safety-oriented Riverton Pee Wee schedule, NWS weather, WBGT guidance and weekly lunch menus.",
+  "description": "Safety-oriented Riverton Pee Wee schedule, NWS weather and WBGT guidance.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

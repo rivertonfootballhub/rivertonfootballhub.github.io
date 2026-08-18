@@ -37,7 +37,7 @@ const GAMES = [
   { id: "wk10", week: "Week 10", date: "2026-11-14", time: null, opponent: "Super Bowl", side: "tbd", venue: "commerce", postseason: true }
 ];
 
-const state = { report: null, reportFromCache: false, alerts: [], alertsAvailable: null, loading: false, selectedHour: null, activeView: "home", nextGame: null, lunchGrade: "3", lunchData: null, lunchFromCache: false };
+const state = { report: null, reportFromCache: false, alerts: [], alertsAvailable: null, loading: false, selectedHour: null, activeView: "home", nextGame: null };
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(value) {
@@ -46,10 +46,6 @@ function escapeHtml(value) {
 
 function cleanAlertText(value) {
   return String(value ?? "").replace(/(\d)([AP]M)\b/g, "$1 $2");
-}
-
-function cleanMenuText(value) {
-  return String(value ?? "").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").replace(/\s{2,}/g, " ").trim();
 }
 
 function chicagoParts(date = new Date()) {
@@ -202,55 +198,6 @@ async function fetchJson(url, timeout = 12000) {
   } finally { clearTimeout(timer); }
 }
 
-async function fetchLocalJson(url, timeout = 12000) {
-  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
-    if (!response.ok) throw new Error(`Menu data returned ${response.status}`);
-    return { data: await response.json(), fromCache: response.headers.get("X-Riverton-Cache") === "saved" };
-  } finally { clearTimeout(timer); }
-}
-
-function lunchDateLabel(dateKey, options = {}) {
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...options }).format(new Date(`${dateKey}T12:00:00Z`));
-}
-
-function renderLunchMenu() {
-  const data = state.lunchData, grade = data?.menus?.[state.lunchGrade];
-  document.querySelectorAll("[data-lunch-grade]").forEach((button) => {
-    const active = button.dataset.lunchGrade === state.lunchGrade;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
-  $("lunchGradeBadge").textContent = `${state.lunchGrade}${state.lunchGrade === "3" ? "rd" : "th"}`;
-  if (!data || !grade) {
-    $("lunchWeekLabel").textContent = "Menu Temporarily Unavailable";
-    $("lunchWeek").innerHTML = '<p class="empty-state">The weekly menu could not be loaded. Use Official menu above to check the food-service site.</p>';
-    return;
-  }
-  $("lunchWeekLabel").textContent = `${lunchDateLabel(data.weekStart, { month: "short", day: "numeric" })}–${lunchDateLabel(data.weekEnd, { month: "short", day: "numeric" })}`;
-  $("lunchWeek").innerHTML = grade.days.map((day) => {
-    const date = lunchDateLabel(day.date, { weekday: "short", month: "short", day: "numeric" });
-    if (day.closed) return `<article class="lunch-day closed"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>${escapeHtml(cleanMenuText(day.description || "No school"))}</h4></div></article>`;
-    if (!day.entrees?.length && !day.sides?.length) return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div><h4>Menu not published yet</h4></div></article>`;
-    return `<article class="lunch-day"><div class="lunch-date"><strong>${escapeHtml(date.split(",")[0])}</strong><span>${escapeHtml(date.split(",").slice(1).join(",").trim())}</span></div><div class="lunch-meal"><h4>${day.entrees.map((item) => escapeHtml(cleanMenuText(item))).join(" · ")}</h4>${day.sides.length ? `<p><b>With:</b> ${day.sides.map((item) => escapeHtml(cleanMenuText(item))).join(" · ")}</p>` : ""}</div></article>`;
-  }).join("");
-}
-
-async function loadLunchMenus() {
-  try {
-    const result = await fetchLocalJson("./lunch-menu.json", 9000);
-    state.lunchData = result.data;
-    state.lunchFromCache = result.fromCache;
-  } catch {
-    state.lunchData = null;
-    state.lunchFromCache = false;
-  }
-  $("lunchCacheWarning").hidden = !state.lunchFromCache;
-  renderLunchMenu();
-  updateFooter();
-}
-
 function buildHours(properties, parts) {
   return CONFIG.hours.map((hour) => {
     const target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
@@ -334,21 +281,11 @@ function updateFreshnessUI() {
   if (showWarning) $("freshnessWarningText").textContent = `The NWS request failed. This forecast was retrieved ${relativeAge(retrievedAt)}. Do not use saved data for a practice decision—refresh or use the on-field meter.`;
 }
 
-function menuGeneratedLabel(value) {
-  if (!value || !Number.isFinite(new Date(value).getTime())) return "time unavailable";
-  return new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
-}
-
 function updateFooter() {
   const retrievedAt = state.report?.retrievedAt || state.report?.updatedAt;
   if (state.activeView === "schedule") {
     $("updatedLine").textContent = "Verify schedule changes with coaches.";
     $("footerNote").textContent = "Times and locations can change.";
-    return;
-  }
-  if (state.activeView === "school") {
-    $("updatedLine").textContent = `Menu generated ${menuGeneratedLabel(state.lunchData?.generatedAt)} · Confirm changes with Health-e Pro`;
-    $("footerNote").textContent = "Use the official menu for nutrition and allergen details.";
     return;
   }
   if (state.activeView === "policy") {
@@ -519,7 +456,7 @@ async function refreshHub() {
   if (state.loading) return;
   state.loading = true; $("refreshTop").classList.add("loading"); $("refreshButton").textContent = "Refreshing…"; $("refreshButton").disabled = true; $("notice").textContent = "Refreshing conditions and game-day weather…";
   const game = nextGame(); renderNextEvent(); renderNextGame(game);
-  await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game), loadLunchMenus()]);
+  await Promise.allSettled([loadPracticeForecast(), loadGameWeather(game)]);
   state.loading = false; $("refreshTop").classList.remove("loading"); $("refreshButton").textContent = "Refresh Forecast"; $("refreshButton").disabled = false;
   if ($("notice").textContent === "Refreshing conditions and game-day weather…") $("notice").textContent = "";
 }
@@ -536,7 +473,7 @@ async function forceRefreshAll() {
     const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
     if (registration) await registration.update();
     await refreshHub();
-    const incomplete = state.reportFromCache || state.lunchFromCache || state.alertsAvailable === false || !state.lunchData;
+    const incomplete = state.reportFromCache || state.alertsAvailable === false || !state.report;
     $("notice").textContent = incomplete ? "Reloading the app. One or more live sources remain unavailable, so saved-data warnings will stay visible." : "All live data refreshed. Reloading the latest app version…";
     button.textContent = "Reloading…";
     const url = new URL(window.location.href);
@@ -561,8 +498,6 @@ document.addEventListener("click", (event) => {
   if (calendarButton) { const game = GAMES.find((item) => item.id === calendarButton.dataset.calendarGame); if (game) downloadCalendar([game], `riverton-${game.id}.ics`); return; }
   const hourJump = event.target.closest("[data-hour-jump]");
   if (hourJump) { state.selectedHour = Number(hourJump.dataset.hourJump); switchView("conditions"); renderRows(state.report?.hours || []); setTimeout(() => document.getElementById(`guidance-${state.selectedHour}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 220); }
-  const gradeButton = event.target.closest("[data-lunch-grade]");
-  if (gradeButton) { state.lunchGrade = gradeButton.dataset.lunchGrade; renderLunchMenu(); }
 });
 
 $("hourRows").addEventListener("click", (event) => {
@@ -579,7 +514,6 @@ renderNextEvent();
 renderDayContext();
 renderNextGame(nextGame());
 renderRows(CONFIG.hours.map((hour) => ({ hour, label: hourLabel(hour), temperature: null, heatIndex: null, wbgt: null })));
-renderLunchMenu();
 refreshHub();
 
 setInterval(updateFreshnessUI, 60000);
