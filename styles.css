@@ -65,6 +65,7 @@ h1 { margin: 4px 0 0; font-size: clamp(25px, 6.5vw, 35px); letter-spacing: -.9px
 .hero-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 7px; background: var(--rams-gold); }
 .hero-card h2 { margin: 11px 0 7px; font-size: clamp(28px, 8vw, 47px); line-height: 1; letter-spacing: -1.4px; }
 .hero-card > p:not(.card-kicker) { margin: 0; color: #c5d2df; font-size: 14px; line-height: 1.45; }
+.hero-card .event-source-note { display: block; margin-top: 8px; color: #8fa5b9; font-size: 9px; line-height: 1.35; letter-spacing: .03em; text-transform: uppercase; }
 .countdown-pill { display: inline-flex; margin-top: 16px; padding: 8px 11px; border-radius: 99px; color: #09223a; background: var(--rams-gold); font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
 .loading-card .countdown-pill { color: #d6e1eb; background: #1b3a56; }
 

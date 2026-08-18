@@ -9,35 +9,35 @@ const CONFIG = {
   practiceEnd: 20,
   practiceDays: ["Mon", "Tue", "Thu"],
   practiceSeasonEnd: "2026-11-12",
-  cacheKey: "riverton-football-hub-v2-1"
+  cacheKey: "riverton-football-hub-v2-3"
 };
 
 const VENUES = {
   riverton: { name: "Riverton Football Field", address: "7120 SE 70th St, Riverton, KS 66770", lat: 37.0718, lon: -94.7046, destinationType: "Official high-school campus", sourceLabel: "Riverton USD 404", sourceUrl: "https://www.usd404.org/60163_2" },
   chelsea: { name: "Chelsea Football Field", address: "801 W 6th St, Chelsea, OK 74016", lat: 36.5356, lon: -95.4325, destinationType: "Published football-field listing", sourceLabel: "MapQuest field listing", sourceUrl: "https://www.mapquest.com/us/oklahoma/chelsea-high-school-449523714" },
-  westville: { name: "Akin-Langley Field", address: "2080 US Hwy 62, Westville, OK 74965", lat: 35.9926, lon: -94.5680, destinationType: "Official district destination; confirm field gate", sourceLabel: "Westville Public Schools", sourceUrl: "https://www.westville.k12.ok.us/page/football" },
+  westville: { name: "Akin-Langley Field", address: "120 W Cherry St, Westville, OK 74965", lat: 35.9956, lon: -94.5688, destinationType: "Official field address; confirm preferred entrance", sourceLabel: "Westville Public Schools event listing", sourceUrl: "https://www.westville.k12.ok.us/events?id=55911144" },
   wyandotte: { name: "Wyandotte Football Field", address: "5 S 1st St, Wyandotte, OK 74370", lat: 36.7942, lon: -94.7252, destinationType: "Official school campus", sourceLabel: "Wyandotte Public Schools", sourceUrl: "https://www.wyandotte.k12.ok.us/" },
   fairland: { name: "Fairland Football Field", address: "202 W Washington Ave, Fairland, OK 74343", lat: 36.7512, lon: -94.8483, destinationType: "Official school campus", sourceLabel: "Fairland Public Schools", sourceUrl: "https://www.fpsowls.com/" },
   quapaw: { name: "Quapaw Football Field", address: "305 W 1st St, Quapaw, OK 74363", lat: 36.9540, lon: -94.7890, destinationType: "Official school campus", sourceLabel: "Quapaw Public Schools", sourceUrl: "https://www.qpswildcats.com/apps/contact/" },
   commerce: { name: "Commerce High School Stadium", address: "420 Doug Furnas Blvd, Commerce, OK 74339", lat: 36.9340, lon: -94.8727, destinationType: "Official high-school campus", sourceLabel: "Commerce High School", sourceUrl: "https://www.commercetigers.net/o/chs" },
-  baxter: { name: "Baxter Springs Football Field", address: "100 N Military Ave, Baxter Springs, KS 66713", lat: 37.0236, lon: -94.7355, destinationType: "Federal school-directory address", sourceLabel: "NCES school directory", sourceUrl: "https://nces.ed.gov/ccd/schoolsearch/school_detail.asp?ID=200381001508" },
+  baxter: { name: "Baxter Springs Youth Football Field", address: "17th St & Lions Rd, Baxter Springs, KS 66713", lat: 37.0197, lon: -94.7391, destinationType: "Field-specific public map; confirm preferred entrance", sourceLabel: "Mapped football field near Central Elementary", sourceUrl: "https://mapcarta.com/W280873748" },
   galena: { name: "Galena High School", address: "702 E 7th St, Galena, KS 66739", lat: 37.0759, lon: -94.6397, destinationType: "Official district campus", sourceLabel: "Galena USD 499", sourceUrl: "https://usd499.socs.net/vnews/display.v/ContactUs" }
 };
 
 const GAMES = [
-  { id: "wk1", week: "Week 1", date: "2026-09-12", time: "18:00", opponent: "Chelsea", side: "away", venue: "chelsea" },
-  { id: "wk2", week: "Week 2", date: "2026-09-19", time: "18:00", opponent: "Westville", side: "away", venue: "westville" },
-  { id: "wk3", week: "Week 3", date: "2026-09-26", time: "18:00", opponent: "Wyandotte", side: "home", venue: "riverton" },
-  { id: "wk4", week: "Week 4", date: "2026-10-03", time: "18:00", opponent: "Fairland", side: "home", venue: "riverton", conference: true },
-  { id: "wk5", week: "Week 5", date: "2026-10-10", time: "18:00", opponent: "Quapaw", side: "away", venue: "quapaw", conference: true },
-  { id: "wk6", week: "Week 6", date: "2026-10-17", time: "18:00", opponent: "Commerce", side: "home", venue: "riverton", conference: true },
-  { id: "wk7", week: "Week 7", date: "2026-10-24", time: "18:00", opponent: "Baxter", side: "away", venue: "baxter", conference: true },
+  { id: "wk1", week: "Week 1", date: "2026-09-12", time: "18:00", timeAssumed: true, opponent: "Chelsea", side: "away", venue: "chelsea" },
+  { id: "wk2", week: "Week 2", date: "2026-09-19", time: "18:00", timeAssumed: true, opponent: "Westville", side: "away", venue: "westville" },
+  { id: "wk3", week: "Week 3", date: "2026-09-26", time: "18:00", timeAssumed: true, opponent: "Wyandotte", side: "home", venue: "riverton" },
+  { id: "wk4", week: "Week 4", date: "2026-10-03", time: "18:00", timeAssumed: true, opponent: "Fairland", side: "home", venue: "riverton", conference: true },
+  { id: "wk5", week: "Week 5", date: "2026-10-10", time: "18:00", timeAssumed: true, opponent: "Quapaw", side: "away", venue: "quapaw", conference: true },
+  { id: "wk6", week: "Week 6", date: "2026-10-17", time: "18:00", timeAssumed: true, opponent: "Commerce", side: "home", venue: "riverton", conference: true },
+  { id: "wk7", week: "Week 7", date: "2026-10-24", time: "18:00", timeAssumed: true, opponent: "Baxter", side: "away", venue: "baxter", conference: true },
   { id: "wk8", week: "Week 8", date: "2026-10-31", time: null, opponent: "Galena", side: "home", venue: "riverton", conference: true },
   { id: "wk9", week: "Week 9", date: "2026-11-07", time: null, opponent: "Playoffs", side: "tbd", venue: null, postseason: true },
   { id: "wk10", week: "Week 10", date: "2026-11-14", time: null, opponent: "Super Bowl", side: "tbd", venue: "commerce", postseason: true }
 ];
 
-const state = { report: null, reportFromCache: false, alerts: [], alertsAvailable: null, loading: false, selectedHour: null, activeView: "home", nextGame: null };
+const state = { report: null, reportFromCache: false, alerts: [], alertsAvailable: null, gameWeatherAvailable: null, loading: false, selectedHour: null, activeView: "home", nextGame: null };
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(value) {
@@ -85,7 +85,8 @@ function calendarDayNumber(date = new Date()) {
 function formatGameDate(game) {
   const date = dateAt(game.date, "12:00");
   const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "short", month: "short", day: "numeric" }).format(date);
-  const time = game.time ? new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" }).format(gameStart(game)) : "TIME TBD";
+  const baseTime = game.time ? new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, hour: "numeric", minute: "2-digit" }).format(gameStart(game)) : "TIME TBD";
+  const time = game.timeAssumed ? `${baseTime}*` : baseTime;
   return { day, time };
 }
 
@@ -131,8 +132,10 @@ function renderNextEvent() {
     $("nextEventTitle").textContent = "Season Complete";
     $("nextEventMeta").textContent = "Thanks for a great season. Go Rams!";
     $("nextEventCountdown").textContent = "2026";
+    $("nextEventSource").textContent = "Manually maintained schedule · Confirm changes with coaches";
     return;
   }
+  $("nextEventSource").textContent = "Manually maintained schedule · Confirm changes with coaches";
   $("nextEventTitle").textContent = event.type === "practice" ? "Football Practice" : event.title;
   if (event.type === "practice") {
     const day = new Intl.DateTimeFormat("en-US", { timeZone: CONFIG.timeZone, weekday: "long", month: "long", day: "numeric" }).format(event.start);
@@ -200,14 +203,14 @@ async function fetchJson(url, timeout = 12000) {
 
 function buildHours(properties, parts) {
   return CONFIG.hours.map((hour) => {
-    const target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
-    return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
+    const target = targetDate(parts, hour);
+    return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: valueAt(properties.heatIndex, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
   });
 }
 
 function buildCurrentHour(properties, parts) {
-  const hour = parts.hour, target = targetDate(parts, hour), heatIndex = valueAt(properties.heatIndex, target);
-  return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: heatIndex ?? valueAt(properties.apparentTemperature, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
+  const hour = parts.hour, target = targetDate(parts, hour);
+  return { hour, label: hourLabel(hour), temperature: valueAt(properties.temperature, target), heatIndex: valueAt(properties.heatIndex, target), wbgt: valueAt(properties.wetBulbGlobeTemperature, target) };
 }
 
 function readCache(dateKey) {
@@ -251,7 +254,7 @@ function formatSourceTime(value) {
 
 function formatAlertUpdate(value) {
   const formatted = formatSourceTime(value);
-  return formatted === "Unavailable" ? "NWS update time unavailable" : `NWS updated ${formatted.replace(", ", " at ")}`;
+  return formatted === "Unavailable" ? "NWS alert issue time unavailable" : `NWS alert issued ${formatted.replace(", ", " at ")}`;
 }
 
 function relativeAge(value) {
@@ -273,9 +276,9 @@ function updateFreshnessUI() {
   const issuedAt = report?.issuedAt || null;
   $("freshnessBadge").textContent = state.reportFromCache ? "SAVED" : report ? "LIVE" : "CHECKING";
   $("freshnessBadge").classList.toggle("cached", state.reportFromCache);
-  $("forecastIssued").textContent = issuedAt ? `NWS issued ${formatSourceTime(issuedAt)} · ${relativeAge(issuedAt)}` : "NWS issuance time unavailable";
+  $("forecastIssued").textContent = issuedAt ? `NWS grid updated ${formatSourceTime(issuedAt)} · ${relativeAge(issuedAt)}` : "NWS grid update time unavailable";
   $("forecastRetrieved").textContent = retrievedAt ? `Retrieved ${formatSourceTime(retrievedAt)} · ${relativeAge(retrievedAt)}` : "Retrieval time unavailable";
-  $("homeFreshness").textContent = report ? `${state.reportFromCache ? "SAVED" : "NWS"} · ${issuedAt ? `Issued ${relativeAge(issuedAt)}` : "Issuance time unavailable"} · ${retrievedAt ? `Retrieved ${relativeAge(retrievedAt)}` : "Retrieval time unavailable"}` : "Checking NWS issuance time…";
+  $("homeFreshness").textContent = report ? `${state.reportFromCache ? "SAVED" : "NWS"} · ${issuedAt ? `Grid updated ${relativeAge(issuedAt)}` : "Grid update time unavailable"} · ${retrievedAt ? `Retrieved ${relativeAge(retrievedAt)}` : "Retrieval time unavailable"}` : "Checking NWS grid update time…";
   const showWarning = state.reportFromCache && (state.activeView === "home" || state.activeView === "conditions");
   $("freshnessWarning").hidden = !showWarning;
   if (showWarning) $("freshnessWarningText").textContent = `The NWS request failed. This forecast was retrieved ${relativeAge(retrievedAt)}. Do not use saved data for a practice decision—refresh or use the on-field meter.`;
@@ -289,7 +292,7 @@ function updateFooter() {
     return;
   }
   if (state.activeView === "policy") {
-    $("updatedLine").textContent = "Policy and venue sources reviewed August 14, 2026.";
+    $("updatedLine").textContent = "Policy and venue sources reviewed August 18, 2026.";
     $("footerNote").textContent = "Forecast plans. The on-field WBGT meter decides.";
     return;
   }
@@ -306,19 +309,18 @@ function renderAlerts(alerts = state.alerts) {
     $("alertArea").innerHTML = `<article class="alert-card alert-unavailable"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg></span><div><strong>NWS alert status unavailable</strong><p>The alert feed did not respond. <a href="${CONFIG.alertsUrl}" target="_blank" rel="noopener">Check the official NWS alert page</a> before activity.</p></div></article>`;
     return;
   }
-  const heatAlerts = state.alerts.filter((feature) => /heat/i.test(feature.properties?.event || ""));
-  $("alertArea").innerHTML = heatAlerts.map((feature) => {
+  $("alertArea").innerHTML = state.alerts.map((feature) => {
     const properties = feature.properties || {};
     const issued = properties.sent || properties.effective;
     const timing = formatAlertUpdate(issued);
-    return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS heat alert")}</strong><p>${escapeHtml(cleanAlertText(properties.headline || "A National Weather Service heat alert is in effect."))}</p><small>${escapeHtml(timing)}</small></div></article>`;
+    return `<article class="alert-card"><span class="alert-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></span><div><strong>${escapeHtml(properties.event || "NWS weather alert")}</strong><p>${escapeHtml(cleanAlertText(properties.headline || "A National Weather Service alert is in effect."))}</p><small>${escapeHtml(timing)}</small></div></article>`;
   }).join("");
 }
 
 function renderReport(report, fromCache = false) {
   state.report = report;
   state.reportFromCache = fromCache;
-  $("dateLabel").textContent = `${report.dateLabel} · ${isPracticeDay() ? "Practice 6–8 PM" : "No scheduled practice"} · Ages 8U`;
+  $("dateLabel").textContent = `${report.dateLabel} · ${isPracticeDay() ? "Practice 6–8 PM" : "No scheduled practice"} · Grades 3–4`;
   renderDayContext();
   renderRows(report.hours);
   renderHomeConditions(report);
@@ -365,11 +367,12 @@ function renderNextGame(game) {
   const opponentText = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? game.opponent : `${game.side === "away" ? "@" : "vs"} ${game.opponent}`;
   $("nextGameTitle").textContent = opponentText;
   $("nextGameBadge").textContent = game.side === "home" ? "Home" : game.side === "away" ? "Away" : "Postseason";
-  $("nextGameMeta").textContent = `${formatted.day} · ${formatted.time}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
+  $("nextGameMeta").textContent = `${formatted.day} · ${formatted.time}${game.timeAssumed ? " · Time unconfirmed" : ""}${venue ? ` · ${venue.name}` : " · Location TBD"}`;
   $("nextGameActions").innerHTML = `${venue ? `<a class="gold-action" href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a>` : ""}<button type="button" data-calendar-game="${game.id}">Add to Calendar</button><button type="button" data-open-view="schedule">Full Schedule</button>`;
 }
 
 async function loadGameWeather(game) {
+  state.gameWeatherAvailable = null;
   if (!game) return;
   if (!game.time) { $("gameWeather").innerHTML = '<p class="empty-state">Game-day weather will appear after the kickoff time is announced.</p>'; return; }
   const venue = gameVenue(game);
@@ -391,12 +394,14 @@ async function loadGameWeather(game) {
     const wbgt = valueAt(grid.properties.wetBulbGlobeTemperature, start), rain = period.probabilityOfPrecipitation?.value;
     const issuedAt = grid.properties.updateTime || hourly.properties.updateTime || hourly.properties.generatedAt || null;
     const retrievedAt = new Date().toISOString();
+    state.gameWeatherAvailable = true;
     $("gameWeather").innerHTML = `<div class="weather-grid">
       <div><small>Temperature</small><strong>${period.temperature}°</strong></div>
-      <div><small>Rain</small><strong>${rain ?? 0}%</strong></div>
+      <div><small>Rain</small><strong>${rain === null || rain === undefined ? "—" : `${rain}%`}</strong></div>
       <div><small>${wbgt === null ? "Wind" : "WBGT"}</small><strong>${wbgt === null ? escapeHtml(period.windSpeed) : formatWbgt(wbgt)}</strong></div>
-    </div><p class="weather-summary">${escapeHtml(period.shortForecast)} · Wind ${escapeHtml(period.windSpeed)} ${escapeHtml(period.windDirection)}</p><p class="weather-freshness">${issuedAt ? `NWS issued ${escapeHtml(formatSourceTime(issuedAt))} · ` : ""}Retrieved ${escapeHtml(formatSourceTime(retrievedAt))}</p>`;
+    </div><p class="weather-summary">${escapeHtml(period.shortForecast)} · Wind ${escapeHtml(period.windSpeed)} ${escapeHtml(period.windDirection)}</p><p class="weather-freshness">${issuedAt ? `NWS grid updated ${escapeHtml(formatSourceTime(issuedAt))} · ` : ""}Retrieved ${escapeHtml(formatSourceTime(retrievedAt))}</p>`;
   } catch {
+    state.gameWeatherAvailable = false;
     $("gameWeather").innerHTML = '<p class="empty-state">The NWS game-day forecast is temporarily unavailable. Tap refresh to try again.</p>';
   }
 }
@@ -405,7 +410,7 @@ function mapsUrl(venue) { return `https://maps.apple.com/?daddr=${encodeURICompo
 
 function renderVenueVerificationList() {
   $("venueVerificationList").innerHTML = Object.values(VENUES).map((venue) => `<article class="venue-verification">
-    <div><strong>${escapeHtml(venue.name)}</strong><p>${escapeHtml(venue.address)}</p><small>${escapeHtml(venue.destinationType)} · Verified Aug. 14, 2026</small></div>
+    <div><strong>${escapeHtml(venue.name)}</strong><p>${escapeHtml(venue.address)}</p><small>${escapeHtml(venue.destinationType)} · Verified Aug. 18, 2026 · ${escapeHtml(venue.sourceLabel)}</small></div>
     <div class="venue-links"><a href="${escapeHtml(venue.sourceUrl)}" target="_blank" rel="noopener">Source</a><a href="${mapsUrl(venue)}" target="_blank" rel="noopener">Directions</a></div>
   </article>`).join("");
 }
@@ -429,7 +434,8 @@ function nextDateKey(key) { const date = new Date(`${key}T12:00:00Z`); date.setU
 function gameIcsBlock(game) {
   const venue = gameVenue(game), title = game.opponent === "Playoffs" || game.opponent === "Super Bowl" ? `Riverton Pee Wee ${game.opponent}` : `Riverton Rams ${game.side === "away" ? "at" : "vs"} ${game.opponent}`;
   const dates = game.time ? `DTSTART:${icsDateTime(gameStart(game))}\r\nDTEND:${icsDateTime(gameEnd(game))}` : `DTSTART;VALUE=DATE:${compactDate(game.date)}\r\nDTEND;VALUE=DATE:${compactDate(nextDateKey(game.date))}`;
-  return `BEGIN:VEVENT\r\nUID:${game.id}-2026@riverton-football-hub\r\nDTSTAMP:${icsDateTime(new Date())}\r\n${dates}\r\nSUMMARY:${icsEscape(title)}\r\nLOCATION:${icsEscape(venue ? `${venue.name}, ${venue.address}` : "TBD")}\r\nDESCRIPTION:${icsEscape("Riverton Pee Wee football. Verify schedule changes with the team.")}\r\nEND:VEVENT`;
+  const description = game.timeAssumed ? "Riverton Pee Wee football. The 6 PM kickoff is assumed, not confirmed. Verify all schedule changes with the team." : "Riverton Pee Wee football. Verify schedule changes with the team.";
+  return `BEGIN:VEVENT\r\nUID:${game.id}-2026@riverton-football-hub\r\nDTSTAMP:${icsDateTime(new Date())}\r\n${dates}\r\nSUMMARY:${icsEscape(title)}\r\nLOCATION:${icsEscape(venue ? `${venue.name}, ${venue.address}` : "TBD")}\r\nDESCRIPTION:${icsEscape(description)}\r\n${game.timeAssumed ? "STATUS:TENTATIVE\r\n" : ""}END:VEVENT`;
 }
 
 function downloadCalendar(games, fileName) {
@@ -473,7 +479,7 @@ async function forceRefreshAll() {
     const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
     if (registration) await registration.update();
     await refreshHub();
-    const incomplete = state.reportFromCache || state.alertsAvailable === false || !state.report;
+    const incomplete = state.reportFromCache || state.alertsAvailable === false || state.gameWeatherAvailable === false || !state.report;
     $("notice").textContent = incomplete ? "Reloading the app. One or more live sources remain unavailable, so saved-data warnings will stay visible." : "All live data refreshed. Reloading the latest app version…";
     button.textContent = "Reloading…";
     const url = new URL(window.location.href);

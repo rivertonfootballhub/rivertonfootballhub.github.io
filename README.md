@@ -1,13 +1,14 @@
-# Riverton Football Hub · v2.2
+# Riverton Football Hub · v2.3
 
 Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
-- Calculates the next team event from Monday, Tuesday and Thursday 6–8 PM practices plus the 2026 Pee Wee game schedule.
+- Calculates the next team event from the manually maintained Monday, Tuesday and Thursday 6–8 PM practice plan plus the 2026 Pee Wee game schedule.
 - Shows NWS game-day weather when the next game enters the forecast window.
 - Provides the full schedule, Apple Maps directions and downloadable calendar events.
 - Shows the actual current-clock-hour NWS WBGT on Home, then provides the full 4–8 PM outlook with WBGT to one decimal place and the exact KSHSAA rules for each hour on Conditions.
-- Shows NWS issuance and retrieval times and places a prominent warning over every saved/cached weather forecast.
-- Includes a policy/source page with the April 2026 KSHSAA reference, NWS data endpoints and a source-backed venue directory verified August 14, 2026.
+- Shows the NWS grid update time and app retrieval time, and places a prominent warning over every saved/cached weather forecast.
+- Shows every active NWS hazard returned for the Riverton point. Missing heat-index and rain values display as an em dash; the app does not replace them with another field or zero.
+- Includes a policy/source page with the April 2026 KSHSAA reference, NWS data endpoints and a source-backed venue directory verified August 18, 2026.
 - Provides a Home-only force-refresh control that checks for an updated app shell, refreshes all live weather feeds and safely retains saved fallback data if the network is unavailable.
 - Uses a larger Home logo, compact team metadata and a consistent typography system: Title Case for headings/actions and all caps for labels/status/navigation.
 
@@ -17,7 +18,9 @@ Publish every file in this package from the repository root on the `main` branch
 
 ## Schedule assumptions
 
-Regular-season games begin at 6 PM except the October 31 game. October 31, playoffs and the Super Bowl remain TBD. Verify changes with the team.
+Dates and opponents come from the team flyer. The 6 PM times shown for Weeks 1–7 are assumptions and are visibly marked with an asterisk; their calendar events are tentative. October 31, playoffs and the Super Bowl remain TBD. Verify every change with the team.
+
+The Monday, Tuesday and Thursday 6–8 PM practice plan through November 12 is manually maintained. It will not automatically reflect cancellations or season changes; confirm with coaches.
 
 ## Weather source strategy
 
