@@ -3,11 +3,11 @@
 const CONFIG = {
   gridUrl: "https://api.weather.gov/gridpoints/SGF/17,28",
   alertsUrl: "https://api.weather.gov/alerts/active?point=37.071827,-94.704617",
-  appVersion: "2.6.1",
+  appVersion: "2.6.2",
   versionUrl: "./version.json",
   timeZone: "America/Chicago",
   hours: [16, 17, 18, 19, 20],
-  cacheKey: "riverton-football-hub-v2-6-1"
+  cacheKey: "riverton-football-hub-v2-6-2"
 };
 
 const VENUES = {
@@ -95,8 +95,15 @@ function gameCountdownText(game, now = new Date()) {
   return `${days} days away`;
 }
 
-function renderDayContext() {
-  const currentLabel = state.report?.currentHour?.label || hourLabel(chicagoParts().hour);
+function reportHourForClock(report, now = new Date()) {
+  if (!report) return null;
+  const clockHour = chicagoParts(now).hour;
+  if (report.currentHour?.hour === clockHour) return report.currentHour;
+  return report.hours?.find((item) => item.hour === clockHour) || null;
+}
+
+function renderDayContext(now = new Date()) {
+  const currentLabel = hourLabel(chicagoParts(now).hour);
   $("homeConditionsKicker").textContent = "Today’s conditions";
   $("homeConditionsTitle").textContent = `Current WBGT · ${currentLabel}`;
   $("conditionsTitle").textContent = "Today’s Conditions";
@@ -183,9 +190,9 @@ function renderRows(hours) {
   }).join("");
 }
 
-function renderHomeConditions(report) {
-  const hour = report?.currentHour;
-  if (!hour || hour.wbgt === null) { $("homeConditions").innerHTML = '<p class="empty-state">The current-hour NWS WBGT value is not available yet. Open Conditions for the 4–8 PM outlook.</p>'; return; }
+function renderHomeConditions(report, now = new Date()) {
+  const hour = reportHourForClock(report, now);
+  if (!hour || hour.wbgt === null) { $("homeConditions").innerHTML = `<p class="empty-state">The ${escapeHtml(hourLabel(chicagoParts(now).hour))} NWS WBGT value is not available yet. Open Conditions for the 4–8 PM outlook.</p>`; return; }
   const tier = tierFor(hour.wbgt);
   $("homeConditions").innerHTML = `<div class="current-wbgt"><div><strong>${escapeHtml(hour.label)}</strong><span>Direct-sun NWS grid</span></div><b style="color:${tier.color}">${formatWbgt(hour.wbgt)}</b><em style="color:${tier.color}">${escapeHtml(tier.short)}</em></div>`;
 }
@@ -217,6 +224,10 @@ function relativeAge(value) {
 
 function updateFreshnessUI() {
   const report = state.report;
+  if (report) {
+    renderDayContext();
+    renderHomeConditions(report);
+  }
   const retrievedAt = report?.retrievedAt || report?.updatedAt || null;
   const issuedAt = report?.issuedAt || null;
   $("freshnessBadge").textContent = state.reportFromCache ? "SAVED" : report ? "LIVE" : "CHECKING";
@@ -507,7 +518,11 @@ function initializeApp() {
   refreshHub();
   setInterval(updateFreshnessUI, 60000);
 
-  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=2.6.1").catch(() => {}));
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && state.report) updateFreshnessUI();
+  });
+
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=2.6.2").catch(() => {}));
 }
 
 try {

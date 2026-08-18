@@ -1,4 +1,4 @@
-# Riverton Football Hub · v2.6.1
+# Riverton Football Hub · v2.6.2
 
 Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 
@@ -13,6 +13,10 @@ Mobile-first GitHub Pages app for Riverton Pee Wee football families.
 - Uses a larger Home logo, compact team metadata and a consistent typography system: Title Case for headings/actions and all caps for labels/status/navigation.
 - Combines the next-game summary, countdown, forecast availability and actions into one Home card.
 - Shows the installed app version, checks the published `version.json`, identifies an available update and provides an explicit reload control.
+
+## v2.6.2 current-hour correction
+
+Home now chooses the WBGT value for the actual Chicago clock hour whenever the interface renders or its freshness timer updates. Crossing into a new hour no longer leaves the previous hour labeled as current; if that hour is unavailable, the app says so instead of displaying an older value.
 
 ## v2.6.1 cache-recovery fix
 
